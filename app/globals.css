@@ -1,0 +1,95 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@theme inline {
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-mint: var(--mint);
+  --color-sunshine: var(--sunshine);
+  --color-peach: var(--peach);
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  /* Benox brand palette */
+  --background: #fef1e4; /* warm cream */
+  --foreground: #3b1911; /* deep espresso brown */
+  --card: #fffaf3;
+  --card-foreground: #3b1911;
+  --popover: #fffaf3;
+  --popover-foreground: #3b1911;
+  --primary: #cf4e2b; /* burnt orange */
+  --primary-foreground: #fef1e4;
+  --secondary: #d7c5b7; /* soft taupe */
+  --secondary-foreground: #3b1911;
+  --muted: #f3e2d0;
+  --muted-foreground: #7a5c4c;
+  --accent: #f7c948; /* soft sunshine yellow accent */
+  --accent-foreground: #3b1911;
+  --destructive: #c0392b;
+  --border: #e6d2bf;
+  --input: #e6d2bf;
+  --ring: #cf4e2b;
+  /* playful supporting accents */
+  --mint: #b9e3c6;
+  --sunshine: #f7c948;
+  --peach: #ffd9c0;
+  --radius: 1.25rem;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.locale-arabic {
+  --font-dm-sans: 'Playpen Sans Arabic';
+  --font-fredoka: 'Playpen Sans Arabic';
+}
+
+.font-arabic {
+  font-family: 'Playpen Sans Arabic', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
+  html[dir='rtl'] body {
+    text-align: right;
+  }
+}
