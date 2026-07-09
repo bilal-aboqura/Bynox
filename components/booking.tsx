@@ -2,18 +2,57 @@
 
 import { useState } from 'react'
 import { CalendarCheck, Gamepad2, PartyPopper } from 'lucide-react'
+import type { Locale } from '@/i18n/config'
 import type { SiteContent } from '@/i18n/site-content'
 
 type BookingProps = {
+  locale: Locale
   content: SiteContent['booking']
 }
 
-export function Booking({ content }: BookingProps) {
+export function Booking({ locale, content }: BookingProps) {
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
+
+    const form = e.currentTarget
+    const formData = new FormData(form)
+
+    const response = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        locale,
+        roomType: formData.get('room'),
+        date: formData.get('date'),
+        time: formData.get('time'),
+        duration: formData.get('duration'),
+        players: Number(formData.get('players')),
+        extras: formData.get('extras'),
+        name: formData.get('name'),
+        phone: formData.get('phone'),
+        source: 'website-form',
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setError(data.error || 'Unable to save your booking.')
+      setIsSubmitting(false)
+      return
+    }
+
+    form.reset()
     setSubmitted(true)
+    setIsSubmitting(false)
   }
 
   return (
@@ -181,11 +220,22 @@ export function Booking({ content }: BookingProps) {
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground transition-transform hover:scale-[1.02] sm:col-span-2"
               >
                 <CalendarCheck className="size-5" aria-hidden="true" />
-                {content.submitLabel}
+                {isSubmitting
+                  ? locale === 'ar'
+                    ? 'جارٍ التأكيد...'
+                    : 'Confirming...'
+                  : content.submitLabel}
               </button>
+
+              {error && (
+                <p className="text-sm font-medium text-destructive sm:col-span-2">
+                  {error}
+                </p>
+              )}
             </form>
           )}
         </div>

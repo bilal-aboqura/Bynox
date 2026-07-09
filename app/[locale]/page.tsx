@@ -10,6 +10,7 @@ import { About } from '@/components/about'
 import { Gallery } from '@/components/gallery'
 import { Contact } from '@/components/contact'
 import { SiteFooter } from '@/components/site-footer'
+import { VoiceConcierge } from '@/components/voice-concierge'
 import { getAlternateLocale, isLocale } from '@/i18n/config'
 import { getSiteContent } from '@/i18n/site-content'
 
@@ -37,7 +38,7 @@ export default async function Home({ params }: PageProps) {
         <Hero content={content.hero} />
         <BestSellers content={content.bestSellers} />
         <Rooms content={content.rooms} />
-        <Booking content={content.booking} />
+        <Booking locale={locale} content={content.booking} />
         <Menu content={content.menu} />
         <Packages content={content.packages} />
         <About content={content.about} />
@@ -45,6 +46,7 @@ export default async function Home({ params }: PageProps) {
         <Contact content={content.contact} />
       </main>
       <SiteFooter content={content.footer} />
+      <VoiceConcierge locale={locale} />
     </>
   )
 }
