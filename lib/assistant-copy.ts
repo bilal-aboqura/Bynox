@@ -24,7 +24,7 @@ const copy: Record<Locale, AssistantCopy> = {
     title: 'AI Concierge',
     subtitle:
       'Ask about rooms, menu items, prices, opening hours, or book your session by voice.',
-    closedLabel: 'Ask Benox AI',
+    closedLabel: 'Ask The Lobby AI',
     openLabel: 'Open AI concierge',
     startVoice: 'Start voice chat',
     stopVoice: 'End voice chat',
@@ -48,10 +48,10 @@ const copy: Record<Locale, AssistantCopy> = {
       'Something went wrong while contacting the assistant. Please try again.',
   },
   ar: {
-    title: 'Benox',
-    subtitle: 'صوت Benox',
-    closedLabel: 'اسأل Benox',
-    openLabel: 'افتح صوت Benox',
+    title: 'The Lobby',
+    subtitle: 'صوت The Lobby',
+    closedLabel: 'اسأل The Lobby',
+    openLabel: 'افتح صوت The Lobby',
     startVoice: 'شغّل',
     stopVoice: 'اقفل',
     voiceReady: 'جاهز أسمعك',

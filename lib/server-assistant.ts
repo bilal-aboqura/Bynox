@@ -21,7 +21,7 @@ export const bookingParameters = z.object({
 
 export function createCafeTextAgent(locale: Locale) {
   return new Agent({
-    name: 'Benox Concierge',
+    name: 'The Lobby Concierge',
     model: process.env.OPENAI_ASSISTANT_MODEL || 'gpt-5.5',
     instructions: buildAssistantInstructions(locale),
     tools: [

@@ -18,13 +18,13 @@ export function SiteFooter({ content }: SiteFooterProps) {
         <div className="flex flex-col gap-4 md:col-span-2">
           <div className="flex items-center gap-2">
             <Image
-              src="/images/benox-logo.png"
-              alt="Benox logo"
+              src="/images/the-lobby-logo.png"
+              alt="The Lobby logo"
               width={44}
               height={44}
               className="size-11 rounded-full object-cover"
             />
-            <span className="font-display text-2xl font-semibold">Benox</span>
+            <span className="font-display text-2xl font-semibold">The Lobby</span>
           </div>
           <p className="max-w-sm text-sm leading-relaxed text-background/70">
             {content.description}
