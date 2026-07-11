@@ -29,14 +29,14 @@ export function BestSellers({ content }: BestSellersProps) {
   return (
     <section
       id="best-sellers"
-      className="relative overflow-hidden bg-[#fdf9f4] py-16 md:py-24"
+      className="relative overflow-hidden bg-background py-16 md:py-24"
     >
       <div className="relative mx-auto max-w-7xl px-4 md:px-6">
         <div className="mb-12 flex flex-col items-center text-center">
-          <span className="mb-2 text-sm font-bold uppercase tracking-widest text-slate-800">
+          <span className="mb-2 text-sm font-bold uppercase tracking-widest text-primary">
             {content.eyebrow}
           </span>
-          <h2 className="text-balance text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl">
+          <h2 className="text-balance text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
             {content.title}
           </h2>
         </div>
@@ -45,7 +45,7 @@ export function BestSellers({ content }: BestSellersProps) {
           <button
             type="button"
             onClick={() => scroll('previous')}
-            className="absolute -left-4 top-[40%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-800 opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-slate-50 group-hover/carousel:opacity-100 md:flex lg:-left-6"
+            className="absolute -left-4 top-[40%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-card text-foreground opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-muted group-hover/carousel:opacity-100 md:flex lg:-left-6"
             aria-label={content.previousLabel}
           >
             <ChevronLeft className="h-6 w-6" />
@@ -54,7 +54,7 @@ export function BestSellers({ content }: BestSellersProps) {
           <button
             type="button"
             onClick={() => scroll('next')}
-            className="absolute -right-4 top-[40%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-800 opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-slate-50 group-hover/carousel:opacity-100 md:flex lg:-right-6"
+            className="absolute -right-4 top-[40%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-card text-foreground opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-muted group-hover/carousel:opacity-100 md:flex lg:-right-6"
             aria-label={content.nextLabel}
           >
             <ChevronRight className="h-6 w-6" />
@@ -68,7 +68,7 @@ export function BestSellers({ content }: BestSellersProps) {
             {content.products.map((product) => (
               <article
                 key={product.name}
-                className="group flex w-full flex-none snap-start flex-col overflow-hidden rounded-[2rem] bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
+                className="group flex w-full flex-none snap-start flex-col overflow-hidden rounded-[2rem] bg-card p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
               >
                 <div className="relative mb-4 aspect-square w-full overflow-hidden rounded-2xl">
                   <div
@@ -92,20 +92,20 @@ export function BestSellers({ content }: BestSellersProps) {
                 </div>
 
                 <div className="flex flex-1 flex-col px-2 pb-2 text-start">
-                  <h3 className="mb-1 text-xl font-bold text-slate-900">
+                  <h3 className="mb-1 text-xl font-bold text-foreground">
                     {product.name}
                   </h3>
-                  <p className="mb-4 line-clamp-2 text-sm font-medium leading-relaxed text-slate-500">
+                  <p className="mb-4 line-clamp-2 text-sm font-medium leading-relaxed text-muted-foreground">
                     {product.description}
                   </p>
 
                   <div className="mt-auto flex items-center justify-between gap-3">
-                    <span className="text-lg font-extrabold text-[#b84a28]">
+                    <span className="text-lg font-extrabold text-primary">
                       {product.price}
                     </span>
                     <Link
                       href="#booking"
-                      className="flex items-center gap-1 rounded-full bg-[#fcedda] px-4 py-1.5 text-sm font-bold text-[#b84a28] transition-colors hover:bg-[#f6ddbb]"
+                      className="flex items-center gap-1 rounded-full bg-primary/15 px-4 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/25"
                     >
                       {content.addLabel}
                     </Link>

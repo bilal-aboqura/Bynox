@@ -41,7 +41,7 @@ const realtimeModel =
 
 const labels = {
   ar: {
-    greeting: 'أهلاً، أنا مساعد Benox. قول لي تحب إيه.',
+    greeting: 'أهلاً، أنا مساعد The Lobby. قول لي تحب إيه.',
     placeholder: 'اسأل عن الغرف أو المنيو أو الحجز...',
     send: 'إرسال',
     startVoice: 'ابدأ الصوت',
@@ -50,7 +50,7 @@ const labels = {
     voiceListening: 'بسمعك...',
     voiceSpeaking: 'برد عليك...',
     voiceError: 'في مشكلة في الصوت دلوقتي.',
-    open: 'اسأل Benox',
+    open: 'اسأل The Lobby',
     close: 'إغلاق',
     switchToText: 'كمّل كتابة',
     mute: 'كتم',
@@ -310,7 +310,7 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
       }
 
       const agent = new RealtimeAgent({
-        name: 'Benox Arabic Voice Concierge',
+        name: 'The Lobby Arabic Voice Concierge',
         voice: 'marin',
         instructions: buildAssistantInstructions(assistantLocale),
         tools: [createRealtimeBookingTool()],
@@ -488,7 +488,7 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-primary-foreground">
-                Benox
+                The Lobby
               </p>
               <p className="text-xs text-primary-foreground/60">{voiceLabel}</p>
             </div>

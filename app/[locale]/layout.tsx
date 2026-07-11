@@ -18,7 +18,7 @@ const dmSans = DM_Sans({
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#FEF1E4',
+  themeColor: '#11090F',
 }
 
 type LayoutProps = Readonly<{

@@ -25,7 +25,7 @@ export function SiteHeader({
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6">
         <Link href={`/${locale}`} className="flex items-center gap-2">
           <Image
-            src="/images/benox-logo.png"
+            src="/images/the-lobby-logo.png"
             alt={`${content.brandName} logo`}
             width={44}
             height={44}

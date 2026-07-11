@@ -29,7 +29,7 @@ export function Rooms({ content }: RoomsProps) {
   return (
     <section
       id="rooms"
-      className="relative overflow-hidden bg-[#faecd9] py-16 md:py-24"
+      className="relative overflow-hidden bg-card py-16 md:py-24"
     >
       <div className="absolute left-0 top-0 w-full overflow-hidden leading-[0]">
         <svg
@@ -47,7 +47,7 @@ export function Rooms({ content }: RoomsProps) {
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 pt-8 md:px-6 md:pt-12">
         <div className="mb-12 flex flex-col items-center text-center">
-          <h2 className="text-balance text-4xl font-extrabold tracking-tight text-[#3b2a1e] md:text-5xl">
+          <h2 className="text-balance text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
             {content.title}
           </h2>
         </div>
@@ -56,7 +56,7 @@ export function Rooms({ content }: RoomsProps) {
           <button
             type="button"
             onClick={() => scroll('previous')}
-            className="absolute -left-4 top-[40%] z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-800 opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-slate-50 group-hover/carousel:opacity-100 md:flex lg:-left-6"
+            className="absolute -left-4 top-[40%] z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-background text-foreground opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-muted group-hover/carousel:opacity-100 md:flex lg:-left-6"
             aria-label={content.previousLabel}
           >
             <ChevronLeft className="h-6 w-6" />
@@ -65,7 +65,7 @@ export function Rooms({ content }: RoomsProps) {
           <button
             type="button"
             onClick={() => scroll('next')}
-            className="absolute -right-4 top-[40%] z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-800 opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-slate-50 group-hover/carousel:opacity-100 md:flex lg:-right-6"
+            className="absolute -right-4 top-[40%] z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-background text-foreground opacity-0 shadow-lg transition-all hover:scale-105 hover:bg-muted group-hover/carousel:opacity-100 md:flex lg:-right-6"
             aria-label={content.nextLabel}
           >
             <ChevronRight className="h-6 w-6" />
@@ -79,7 +79,7 @@ export function Rooms({ content }: RoomsProps) {
             {content.rooms.map((room) => (
               <article
                 key={room.name}
-                className="group relative flex h-[400px] w-[85vw] flex-none snap-start flex-col overflow-hidden rounded-[2rem] bg-[#3b2a1e] text-white shadow-md transition-all hover:-translate-y-1 hover:shadow-xl sm:w-[calc(50%-12px)] md:h-[450px] lg:w-[calc(25%-18px)]"
+                className="group relative flex h-[400px] w-[85vw] flex-none snap-start flex-col overflow-hidden rounded-[2rem] bg-foreground text-background shadow-md transition-all hover:-translate-y-1 hover:shadow-xl sm:w-[calc(50%-12px)] md:h-[450px] lg:w-[calc(25%-18px)]"
               >
                 <div className="relative h-[65%] w-full overflow-hidden">
                   <Image
@@ -89,12 +89,12 @@ export function Rooms({ content }: RoomsProps) {
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#3b2a1e] to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-foreground to-transparent" />
                 </div>
 
-                <div className="relative flex flex-1 flex-col justify-end bg-[#3b2a1e] p-5 pt-0">
+                <div className="relative flex flex-1 flex-col justify-end bg-foreground p-5 pt-0">
                   <h3 className="mb-1 text-2xl font-bold">{room.name}</h3>
-                  <p className="mb-4 text-sm text-[#d4c9bc]">
+                  <p className="mb-4 text-sm text-background/70">
                     {room.players} | {room.features}
                   </p>
 
@@ -102,7 +102,7 @@ export function Rooms({ content }: RoomsProps) {
                     <span className="text-xl font-bold">{room.price}</span>
                     <Link
                       href="#booking"
-                      className="rounded-full bg-[#d26b3e] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#b55831]"
+                      className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/80"
                     >
                       {content.buttonLabel}
                     </Link>

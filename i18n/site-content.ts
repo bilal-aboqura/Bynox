@@ -169,12 +169,12 @@ export type SiteContent = {
 export const siteContent: Record<Locale, SiteContent> = {
   en: {
     metadata: {
-      title: 'Benox | Cafe & PlayStation Gaming Lounge',
+      title: 'The Lobby | Cafe & PlayStation Gaming Lounge',
       description:
-        'Enjoy specialty drinks, sweet desserts, and private PlayStation rooms made for unforgettable hangouts at Benox.',
+        'Enjoy specialty drinks, sweet desserts, and private PlayStation rooms made for unforgettable hangouts at The Lobby.',
     },
     header: {
-      brandName: 'Benox',
+      brandName: 'The Lobby',
       navLinks: [
         { label: 'Home', href: '#home' },
         { label: 'Best Sellers', href: '#best-sellers' },
@@ -199,7 +199,7 @@ export const siteContent: Record<Locale, SiteContent> = {
       primaryCta: 'Book Your Gaming Room',
       secondaryCta: 'View Menu',
       imageAlt:
-        'Four friends smiling and holding Benox iced coffees inside the cafe',
+        'Four friends smiling and holding The Lobby iced coffees inside the cafe',
     },
     bestSellers: {
       eyebrow: 'Best Sellers',
@@ -210,7 +210,7 @@ export const siteContent: Record<Locale, SiteContent> = {
       products: [
         {
           name: 'Honey Cake',
-          description: 'Benox signature layered honey cake',
+          description: 'The Lobby signature layered honey cake',
           price: 'EGP 140',
           image: '/images/product-honey-cake.png',
           tag: 'Fan favorite',
@@ -338,7 +338,7 @@ export const siteContent: Record<Locale, SiteContent> = {
       badge: 'The Menu',
       title: 'Fuel for every session',
       description:
-        'From slow-brewed coffee to game-night snacks, everything is prepared fresh at Benox.',
+        'From slow-brewed coffee to game-night snacks, everything is prepared fresh at The Lobby.',
       categories: [
         {
           title: 'Hot Coffee',
@@ -459,12 +459,12 @@ export const siteContent: Record<Locale, SiteContent> = {
       ],
     },
     about: {
-      badge: 'About Benox',
+      badge: 'About The Lobby',
       title: 'Where good coffee meets great games',
       description:
-        "Benox brings together good coffee, delicious desserts, and PlayStation gaming rooms in one joyful place made for friends, challenges, and cozy hangouts. Whether you're here for the honey cake or the high scores, there's always a seat and a controller waiting for you.",
+        "The Lobby brings together good coffee, delicious desserts, and PlayStation gaming rooms in one joyful place made for friends, challenges, and cozy hangouts. Whether you're here for the honey cake or the high scores, there's always a seat and a controller waiting for you.",
       imageAlt:
-        'The bright, cozy Benox cafe interior with warm cream walls and orange chairs',
+        'The bright, cozy The Lobby cafe interior with black, red, and pink details',
       features: [
         {
           title: 'Specialty coffee',
@@ -485,7 +485,7 @@ export const siteContent: Record<Locale, SiteContent> = {
     },
     gallery: {
       badge: 'The Vibe',
-      title: 'A peek inside Benox',
+      title: 'A peek inside The Lobby',
       description:
         'Warm lights, good company, great coffee, and just the right amount of friendly competition.',
       photos: [
@@ -511,7 +511,7 @@ export const siteContent: Record<Locale, SiteContent> = {
         },
         {
           src: '/images/gallery-cafe-interior.png',
-          alt: 'The bright Benox cafe interior with plants and warm lighting',
+          alt: 'The bright The Lobby cafe interior with plants and warm lighting',
           className: 'col-span-2 md:col-span-1',
         },
         {
@@ -552,17 +552,17 @@ export const siteContent: Record<Locale, SiteContent> = {
       openingHoursTitle: 'Opening hours',
       hoursLines: ['Sun - Thu: 10:00 AM - 12:00 AM', 'Fri - Sat: 10:00 AM - 2:00 AM'],
       addressLine: '123 Play Street, Coffee District',
-      copyrightLabel: 'Benox Cafe & Gaming Lounge. All rights reserved.',
+      copyrightLabel: 'The Lobby Cafe & Gaming Lounge. All rights reserved.',
     },
   },
   ar: {
     metadata: {
-      title: 'Benox | كافيه وصالة بلايستيشن',
+      title: 'The Lobby | كافيه وصالة بلايستيشن',
       description:
-        'استمتع بالمشروبات المميزة والحلويات وغرف البلايستيشن الخاصة لجلسات لا تُنسى في Benox.',
+        'استمتع بالمشروبات المميزة والحلويات وغرف البلايستيشن الخاصة لجلسات لا تُنسى في The Lobby.',
     },
     header: {
-      brandName: 'Benox',
+      brandName: 'The Lobby',
       navLinks: [
         { label: 'الرئيسية', href: '#home' },
         { label: 'الأكثر طلبًا', href: '#best-sellers' },
@@ -586,7 +586,7 @@ export const siteContent: Record<Locale, SiteContent> = {
         'مشروبات مميزة، حلويات شهية، وغرف بلايستيشن خاصة مصممة لجلسات الأصحاب التي لا تُنسى.',
       primaryCta: 'احجز غرفة اللعب',
       secondaryCta: 'شاهد المنيو',
-      imageAlt: 'أربعة أصدقاء يبتسمون ويحملون مشروبات Benox المثلجة داخل الكافيه',
+      imageAlt: 'أربعة أصدقاء يبتسمون ويحملون مشروبات The Lobby المثلجة داخل الكافيه',
     },
     bestSellers: {
       eyebrow: 'الأكثر طلبًا',
@@ -597,7 +597,7 @@ export const siteContent: Record<Locale, SiteContent> = {
       products: [
         {
           name: 'هاني كيك',
-          description: 'كيكة العسل الشهيرة بطبقاتها المميزة من Benox',
+          description: 'كيكة العسل الشهيرة بطبقاتها المميزة من The Lobby',
           price: '140 جنيه',
           image: '/images/product-honey-cake.png',
           tag: 'الأكثر شعبية',
@@ -725,7 +725,7 @@ export const siteContent: Record<Locale, SiteContent> = {
       badge: 'المنيو',
       title: 'كل ما تحتاجه لكل جولة',
       description:
-        'من القهوة المحضرة على هدوء إلى سناكس جلسات اللعب، كل شيء يُحضَّر طازجًا في Benox.',
+        'من القهوة المحضرة على هدوء إلى سناكس جلسات اللعب، كل شيء يُحضَّر طازجًا في The Lobby.',
       categories: [
         {
           title: 'قهوة ساخنة',
@@ -846,11 +846,11 @@ export const siteContent: Record<Locale, SiteContent> = {
       ],
     },
     about: {
-      badge: 'عن Benox',
+      badge: 'عن The Lobby',
       title: 'المكان الذي يجمع القهوة الجيدة بالألعاب الممتعة',
       description:
-        'Benox يجمع القهوة الممتازة والحلويات اللذيذة وغرف البلايستيشن في مكان واحد مبهج للأصحاب والتحديات واللمة الحلوة. سواء جئت من أجل الهاني كيك أو من أجل أعلى السكورات، ستجد دائمًا مكانًا وكنترولر ينتظرانك.',
-      imageAlt: 'ديكور Benox المضيء والمريح بجدران كريمية وكراسي برتقالية',
+        'The Lobby يجمع القهوة الممتازة والحلويات اللذيذة وغرف البلايستيشن في مكان واحد مبهج للأصحاب والتحديات واللمة الحلوة. سواء جئت من أجل الهاني كيك أو من أجل أعلى السكورات، ستجد دائمًا مكانًا وكنترولر ينتظرانك.',
+      imageAlt: 'ديكور The Lobby المضيء والمريح بتفاصيل سوداء وحمراء ووردية',
       features: [
         {
           title: 'قهوة متخصصة',
@@ -871,7 +871,7 @@ export const siteContent: Record<Locale, SiteContent> = {
     },
     gallery: {
       badge: 'الأجواء',
-      title: 'نظرة سريعة داخل Benox',
+      title: 'نظرة سريعة داخل The Lobby',
       description:
         'إضاءة دافئة، صحبة حلوة، قهوة ممتازة، وقدر مناسب جدًا من المنافسة الودية.',
       photos: [
@@ -897,7 +897,7 @@ export const siteContent: Record<Locale, SiteContent> = {
         },
         {
           src: '/images/gallery-cafe-interior.png',
-          alt: 'ديكور Benox الداخلي المضيء مع نباتات وإضاءة دافئة',
+          alt: 'ديكور The Lobby الداخلي المضيء مع نباتات وإضاءة دافئة',
           className: 'col-span-2 md:col-span-1',
         },
         {
@@ -938,7 +938,7 @@ export const siteContent: Record<Locale, SiteContent> = {
       openingHoursTitle: 'مواعيد العمل',
       hoursLines: ['الأحد - الخميس: 10:00 ص - 12:00 ص', 'الجمعة - السبت: 10:00 ص - 2:00 ص'],
       addressLine: '123 شارع اللعب، حي القهوة',
-      copyrightLabel: 'مقهى وصالة ألعاب Benox. جميع الحقوق محفوظة.',
+      copyrightLabel: 'مقهى وصالة ألعاب The Lobby. جميع الحقوق محفوظة.',
     },
   },
 }

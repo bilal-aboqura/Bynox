@@ -37,29 +37,29 @@
 
 :root {
   color-scheme: light;
-  /* Benox brand palette */
-  --background: #fef1e4; /* warm cream */
-  --foreground: #3b1911; /* deep espresso brown */
-  --card: #fffaf3;
-  --card-foreground: #3b1911;
-  --popover: #fffaf3;
-  --popover-foreground: #3b1911;
-  --primary: #cf4e2b; /* burnt orange */
-  --primary-foreground: #fef1e4;
-  --secondary: #d7c5b7; /* soft taupe */
-  --secondary-foreground: #3b1911;
-  --muted: #f3e2d0;
-  --muted-foreground: #7a5c4c;
-  --accent: #f7c948; /* soft sunshine yellow accent */
-  --accent-foreground: #3b1911;
-  --destructive: #c0392b;
-  --border: #e6d2bf;
-  --input: #e6d2bf;
-  --ring: #cf4e2b;
+  /* The Lobby: joyful black, red, and pink palette */
+  --background: #11090f;
+  --foreground: #fff1f7;
+  --card: #21101d;
+  --card-foreground: #fff1f7;
+  --popover: #21101d;
+  --popover-foreground: #fff1f7;
+  --primary: #f43f8c;
+  --primary-foreground: #170810;
+  --secondary: #481229;
+  --secondary-foreground: #fff1f7;
+  --muted: #301321;
+  --muted-foreground: #d6a7bc;
+  --accent: #e11d48;
+  --accent-foreground: #fff1f7;
+  --destructive: #fb365a;
+  --border: #63203e;
+  --input: #63203e;
+  --ring: #fb7185;
   /* playful supporting accents */
-  --mint: #b9e3c6;
-  --sunshine: #f7c948;
-  --peach: #ffd9c0;
+  --mint: #fb7185;
+  --sunshine: #f43f8c;
+  --peach: #fbcfe8;
   --radius: 1.25rem;
 }
 
