@@ -50,7 +50,7 @@ export function Hero({ content }: HeroProps) {
           />
           <div className="relative overflow-hidden rounded-3xl border-4 border-card shadow-xl">
             <Image
-              src="/images/hero-composition.jpeg"
+              src="/images/hero-the-lobby.png"
               alt={content.imageAlt}
               width={720}
               height={720}
