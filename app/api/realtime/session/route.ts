@@ -1,61 +1,82 @@
-import OpenAI from 'openai'
+import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai'
 import { NextResponse } from 'next/server'
+import { buildAssistantInstructions } from '@/lib/cafe-knowledge'
+import { bookingFunctionDeclaration } from '@/lib/gemini-assistant'
+import { websiteControlFunctionDeclarations } from '@/lib/website-control'
 
 export const runtime = 'nodejs'
 
-const realtimeModel = process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-2.1'
+const liveModel =
+  process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview'
+const liveVoice = process.env.GEMINI_LIVE_VOICE || 'Charon'
 
 export async function POST() {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY
+
+    if (!apiKey) {
       return NextResponse.json(
-        { error: 'Missing OPENAI_API_KEY on the server.' },
+        { error: 'Missing GEMINI_API_KEY on the server.' },
         { status: 500 },
       )
     }
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    const now = Date.now()
+    const client = new GoogleGenAI({
+      apiKey,
+      httpOptions: { apiVersion: 'v1alpha' },
     })
-
-    const secret = await client.realtime.clientSecrets.create({
-      session: {
-        type: 'realtime',
-        model: realtimeModel,
-        audio: {
-          input: {
-            turn_detection: {
-              type: 'server_vad',
-              create_response: true,
-              interrupt_response: true,
+    const token = await client.authTokens.create({
+      config: {
+        // One browser connection per token keeps a leaked token narrowly scoped.
+        uses: 1,
+        expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
+        newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
+        liveConnectConstraints: {
+          model: liveModel,
+          config: {
+            responseModalities: [Modality.AUDIO],
+            systemInstruction: buildAssistantInstructions('ar'),
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: liveVoice },
+              },
             },
-          },
-          output: {
-            voice: 'marin',
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+            sessionResumption: {},
+            contextWindowCompression: {
+              slidingWindow: { targetTokens: '8000' },
+              triggerTokens: '20000',
+            },
+            tools: [
+              {
+                functionDeclarations: [
+                  bookingFunctionDeclaration,
+                  ...websiteControlFunctionDeclarations,
+                ],
+              },
+            ],
           },
         },
-      },
-      expires_after: {
-        anchor: 'created_at',
-        seconds: 600,
       },
     })
 
     return NextResponse.json({
-      clientSecret: secret.value,
-      expiresAt: secret.expires_at,
+      token: token.name,
+      model: liveModel,
+      expiresAt: new Date(now + 30 * 60 * 1000).toISOString(),
     })
   } catch (error) {
-    console.error('Realtime session route error', error)
-
-    const message =
-      error instanceof Error
-        ? error.message
-        : 'Failed to create a realtime session.'
+    console.error('Gemini Live token route error', error)
 
     return NextResponse.json(
       {
-        error: message,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create a Gemini Live session token.',
       },
       { status: 500 },
     )

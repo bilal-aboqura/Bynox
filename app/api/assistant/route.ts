@@ -1,8 +1,6 @@
-import { run } from '@openai/agents'
 import { NextResponse } from 'next/server'
-import type { AgentInputItem } from '@openai/agents'
 import { isLocale } from '@/i18n/config'
-import { createCafeTextAgent } from '@/lib/server-assistant'
+import { generateAssistantReply } from '@/lib/gemini-assistant'
 
 export const runtime = 'nodejs'
 
@@ -14,30 +12,11 @@ type RequestBody = {
   }>
 }
 
-function toAgentHistory(
-  messages: RequestBody['messages'],
-): AgentInputItem[] {
-  return messages.map((message) => {
-    if (message.role === 'assistant') {
-      return {
-        role: 'assistant',
-        status: 'completed',
-        content: [{ type: 'output_text', text: message.content }],
-      }
-    }
-
-    return {
-      role: 'user',
-      content: [{ type: 'input_text', text: message.content }],
-    }
-  })
-}
-
 export async function POST(request: Request) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: 'Missing OPENAI_API_KEY on the server.' },
+        { error: 'Missing GEMINI_API_KEY on the server.' },
         { status: 500 },
       )
     }
@@ -60,13 +39,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No messages provided.' }, { status: 400 })
     }
 
-    const result = await run(
-      createCafeTextAgent(body.locale),
-      toAgentHistory(trimmedMessages),
-    )
-
     return NextResponse.json({
-      reply: result.finalOutput || 'I am here to help.',
+      reply: await generateAssistantReply(body.locale, trimmedMessages),
     })
   } catch (error) {
     console.error('Assistant route error', error)

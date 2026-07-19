@@ -67,6 +67,8 @@ export default async function RootLayout({
       className={`bg-background ${fredoka.variable} ${dmSans.variable} ${locale === 'ar' ? 'locale-arabic' : 'locale-latin'}`}
     >
       <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
