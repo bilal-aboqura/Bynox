@@ -89,7 +89,32 @@ html {
   h4 {
     @apply font-display;
   }
-  html[dir='rtl'] body {
+html[dir='rtl'] body {
     text-align: right;
+  }
+}
+
+[data-agent-focused='true'] {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+  animation: agent-focus-pulse 1.4s ease-out;
+}
+
+@keyframes agent-focus-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 38%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  [data-agent-focused='true'] {
+    animation: none;
   }
 }
