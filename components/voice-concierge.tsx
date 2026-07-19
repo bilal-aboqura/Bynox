@@ -743,11 +743,18 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
         <div
           id="voice-concierge-panel"
           role="dialog"
-          aria-label={labels.open}
+          aria-labelledby="voice-concierge-title"
+          aria-describedby="voice-concierge-description"
           aria-modal="false"
           dir="rtl"
           className="fixed inset-x-4 bottom-4 z-50 flex max-h-[min(42rem,calc(100dvh-2rem))] w-auto flex-col overflow-hidden rounded-2xl bg-card shadow-2xl shadow-black/20 ring-1 ring-border sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-96"
         >
+          <h2 id="voice-concierge-title" className="sr-only">
+            The Lobby concierge
+          </h2>
+          <p id="voice-concierge-description" className="sr-only">
+            Ask about rooms, the menu, or booking. You can also start a live voice conversation.
+          </p>
           <div className="flex items-center gap-3 border-b border-border bg-foreground px-4 py-3.5">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary">
               <Bot className="size-5 text-primary-foreground" aria-hidden="true" />
