@@ -709,6 +709,7 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
     voiceState === 'connecting' ||
     voiceState === 'listening' ||
     voiceState === 'speaking'
+  const isVoiceLive = voiceState === 'listening' || voiceState === 'speaking'
 
   const voiceLabel =
     error ||
@@ -728,12 +729,13 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
         <button
           id="voice-concierge-trigger"
           aria-label={labels.open}
+          title={labels.open}
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/40 transition-all hover:scale-110 hover:shadow-xl hover:shadow-primary/50 active:scale-95"
+          className="fixed bottom-4 right-4 z-50 flex size-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/40 transition-all hover:scale-105 hover:shadow-xl hover:shadow-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95 sm:bottom-6 sm:right-6"
           style={{ direction: 'ltr' }}
         >
           <Bot className="size-6 text-primary-foreground" aria-hidden="true" />
-          <span className="absolute size-14 animate-ping rounded-full bg-primary/30" />
+          <span className="pointer-events-none absolute size-14 animate-ping rounded-full bg-primary/30 motion-reduce:animate-none" />
         </button>
       )}
 
@@ -742,22 +744,44 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
           id="voice-concierge-panel"
           role="dialog"
           aria-label={labels.open}
+          aria-modal="false"
           dir="rtl"
-          className="fixed bottom-6 right-6 z-50 flex w-[22rem] flex-col overflow-hidden rounded-3xl bg-card shadow-2xl shadow-black/20 ring-1 ring-border sm:w-96"
+          className="fixed inset-x-4 bottom-4 z-50 flex max-h-[min(42rem,calc(100dvh-2rem))] w-auto flex-col overflow-hidden rounded-2xl bg-card shadow-2xl shadow-black/20 ring-1 ring-border sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-96"
         >
-          <div className="flex items-center gap-3 border-b border-border bg-foreground px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-border bg-foreground px-4 py-3.5">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary">
               <Bot className="size-5 text-primary-foreground" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-primary-foreground">The Lobby</p>
-              <p className="text-xs text-primary-foreground/60">{voiceLabel}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-primary-foreground">The Lobby</p>
+                {isVoiceLive && (
+                  <span className="flex items-center gap-1 rounded-full bg-mint/20 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-mint">
+                    <span className="size-1.5 rounded-full bg-mint" />
+                    LIVE
+                  </span>
+                )}
+              </div>
+              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-primary-foreground/60">
+                <span
+                  className={`size-1.5 rounded-full ${
+                    isVoiceLive
+                      ? 'bg-mint shadow-[0_0_0_3px_rgba(185,227,198,0.16)]'
+                      : voiceState === 'error'
+                        ? 'bg-destructive'
+                        : 'bg-primary-foreground/40'
+                  }`}
+                />
+                <p className="truncate">{voiceLabel}</p>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 aria-label={isVoiceActive ? labels.stopVoice : labels.startVoice}
+                aria-busy={voiceState === 'connecting'}
                 onClick={isVoiceActive ? stopVoice : () => void startVoice()}
-                className={`flex size-8 items-center justify-center rounded-full transition-colors ${
+                className={`flex size-9 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-foreground ${
                   isVoiceActive
                     ? 'bg-primary text-primary-foreground'
                     : 'text-primary-foreground/60 hover:bg-white/10 hover:text-primary-foreground'
@@ -771,9 +795,11 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
               </button>
               {isVoiceActive && (
                 <button
+                  type="button"
                   aria-label={isMuted ? labels.unmute : labels.mute}
+                  aria-pressed={isMuted}
                   onClick={handleToggleMute}
-                  className="flex size-8 items-center justify-center rounded-full text-primary-foreground/60 transition-colors hover:bg-white/10 hover:text-primary-foreground"
+                  className="flex size-9 items-center justify-center rounded-full text-primary-foreground/60 transition-colors hover:bg-white/10 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-foreground"
                 >
                   {isMuted ? (
                     <VolumeX className="size-4" aria-hidden="true" />
@@ -783,9 +809,10 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
                 </button>
               )}
               <button
+                type="button"
                 aria-label={labels.close}
                 onClick={handleClose}
-                className="flex size-8 items-center justify-center rounded-full text-primary-foreground/60 transition-colors hover:bg-white/10 hover:text-primary-foreground"
+                className="flex size-9 items-center justify-center rounded-full text-primary-foreground/60 transition-colors hover:bg-white/10 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-foreground"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
@@ -793,16 +820,20 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
           </div>
 
           {isVoiceActive && (
-            <div className="flex flex-col items-center gap-4 bg-foreground/5 px-4 py-6">
-              <div className="relative flex size-20 items-center justify-center">
+            <div className="flex flex-col items-center gap-4 bg-foreground/[0.03] px-4 py-7">
+              <div
+                className="relative flex size-20 items-center justify-center"
+                aria-label={voiceLabel}
+                role="img"
+              >
                 <span
                   className={`absolute size-20 rounded-full bg-primary/20 ${
-                    voiceState === 'listening' ? 'animate-ping' : ''
+                    voiceState === 'listening' ? 'animate-ping motion-reduce:animate-none' : ''
                   }`}
                 />
                 <span
                   className={`absolute size-14 rounded-full bg-primary/30 ${
-                    voiceState === 'speaking' ? 'animate-pulse' : ''
+                    voiceState === 'speaking' ? 'animate-pulse motion-reduce:animate-none' : ''
                   }`}
                 />
                 <span className="relative flex size-10 items-center justify-center rounded-full bg-primary">
@@ -812,6 +843,17 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
                     <Mic className="size-5 text-primary-foreground" aria-hidden="true" />
                   )}
                 </span>
+              </div>
+              <div className="flex h-7 items-end gap-1" aria-hidden="true">
+                {[3, 5, 7, 4, 6, 3].map((height, index) => (
+                  <span
+                    key={index}
+                    className={`voice-meter-bar w-1 rounded-full bg-primary/70 ${
+                      voiceState === 'speaking' ? 'voice-meter-bar-active' : ''
+                    }`}
+                    style={{ height: `${height * 3}px` }}
+                  />
+                ))}
               </div>
               <p className="text-sm font-medium text-foreground">{voiceLabel}</p>
               {websiteControlStatus && (
@@ -824,15 +866,17 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
               )}
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={stopVoice}
-                  className="flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted"
+                  className="flex min-h-11 items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <MessageCircle className="size-3.5" aria-hidden="true" />
                   {labels.switchToText}
                 </button>
                 <button
+                  type="button"
                   onClick={stopVoice}
-                  className="rounded-full bg-destructive px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-80"
+                  className="min-h-11 rounded-full bg-destructive px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                 >
                   {labels.stopVoice}
                 </button>
@@ -905,10 +949,11 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
                   className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
                 />
                 <button
+                  type="button"
                   aria-label={labels.send}
                   onClick={() => void handleSend()}
                   disabled={!input.trim() || isSending}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:scale-105 disabled:opacity-40"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-40"
                 >
                   {isSending ? (
                     <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />

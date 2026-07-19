@@ -8,6 +8,7 @@ export const runtime = 'nodejs'
 
 const liveModel =
   process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview'
+const liveVoice = process.env.GEMINI_LIVE_VOICE || 'Charon'
 
 export async function POST() {
   try {
@@ -38,10 +39,10 @@ export async function POST() {
             systemInstruction: buildAssistantInstructions('ar'),
             speechConfig: {
               voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: 'Kore' },
+                prebuiltVoiceConfig: { voiceName: liveVoice },
               },
             },
-            inputAudioTranscription: { languageCodes: ['ar-EG'] },
+            inputAudioTranscription: {},
             outputAudioTranscription: {},
             thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
             sessionResumption: {},

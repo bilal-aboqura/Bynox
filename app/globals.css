@@ -100,6 +100,37 @@ html[dir='rtl'] body {
   animation: agent-focus-pulse 1.4s ease-out;
 }
 
+.voice-meter-bar-active {
+  animation: voice-meter 720ms ease-in-out infinite alternate;
+}
+
+.voice-meter-bar-active:nth-child(2) {
+  animation-delay: -180ms;
+}
+
+.voice-meter-bar-active:nth-child(3) {
+  animation-delay: -360ms;
+}
+
+.voice-meter-bar-active:nth-child(4) {
+  animation-delay: -540ms;
+}
+
+.voice-meter-bar-active:nth-child(5) {
+  animation-delay: -270ms;
+}
+
+@keyframes voice-meter {
+  from {
+    transform: scaleY(0.45);
+    opacity: 0.55;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
 @keyframes agent-focus-pulse {
   0% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 38%, transparent);
@@ -115,6 +146,10 @@ html[dir='rtl'] body {
   }
 
   [data-agent-focused='true'] {
+    animation: none;
+  }
+
+  .voice-meter-bar-active {
     animation: none;
   }
 }
