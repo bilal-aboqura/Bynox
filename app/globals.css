@@ -100,6 +100,98 @@ html[dir='rtl'] body {
   animation: agent-focus-pulse 1.4s ease-out;
 }
 
+.z-modal-backdrop {
+  z-index: 60;
+}
+
+.z-modal-panel {
+  z-index: 70;
+}
+
+.z-modal {
+  z-index: 60;
+}
+
+.z-toast {
+  z-index: 80;
+}
+
+.menu-safe-inline {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.menu-dock-safe {
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+
+.menu-sheet-backdrop {
+  animation: menu-backdrop-enter 180ms ease-out both;
+}
+
+.menu-sheet-panel {
+  animation: menu-sheet-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  touch-action: pan-y;
+}
+
+.menu-chat-enter {
+  animation: menu-chat-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.agent-status-enter {
+  animation: agent-status-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.agent-pointer-shell {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 90;
+  width: 2.75rem;
+  height: 2.75rem;
+  pointer-events: none;
+  contain: layout;
+  transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.agent-pointer-label {
+  position: absolute;
+  bottom: calc(100% + 0.35rem);
+  left: 50%;
+  border-radius: 999px;
+  background: var(--foreground);
+  color: white;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  filter: drop-shadow(0 2px 3px rgb(59 25 17 / 22%));
+}
+
+.agent-pointer-hand {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transform-origin: 50% 70%;
+  filter: drop-shadow(0 3px 4px rgb(59 25 17 / 28%));
+}
+
+.agent-pointer-hand[data-pressed='true'] {
+  animation: agent-pointer-tap 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-agent-cart-active='true'] {
+  animation: agent-cart-arrival 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .voice-meter-bar-active {
   animation: voice-meter 720ms ease-in-out infinite alternate;
 }
@@ -140,12 +232,108 @@ html[dir='rtl'] body {
   }
 }
 
+@keyframes agent-cart-arrival {
+  0% {
+    filter: brightness(1.18);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 38%, transparent);
+  }
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
+@keyframes agent-pointer-tap {
+  0% {
+    transform: scale(1);
+  }
+  48% {
+    transform: scale(0.78);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes menu-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes menu-sheet-enter {
+  from {
+    opacity: 0.92;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes menu-chat-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.75rem, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes agent-status-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(-50%, -0.5rem, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0) scale(1);
+  }
+}
+
+@media (min-width: 640px) {
+  .menu-safe-inline {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+
+  .menu-dock-safe {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
   [data-agent-focused='true'] {
+    animation: none;
+  }
+
+  [data-agent-cart-active='true'] {
+    animation: none;
+  }
+
+  .agent-pointer-shell {
+    transition: none;
+  }
+
+  .agent-pointer-hand[data-pressed='true'] {
+    animation: none;
+  }
+
+  .menu-sheet-backdrop,
+  .menu-sheet-panel,
+  .menu-chat-enter,
+  .agent-status-enter {
     animation: none;
   }
 

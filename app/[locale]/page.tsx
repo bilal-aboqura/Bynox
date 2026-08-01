@@ -39,7 +39,7 @@ export default async function Home({ params }: PageProps) {
         <BestSellers content={content.bestSellers} />
         <Rooms content={content.rooms} />
         <Booking locale={locale} content={content.booking} />
-        <Menu content={content.menu} />
+        <Menu locale={locale} content={content.menu} />
         <Packages content={content.packages} />
         <About content={content.about} />
         <Gallery content={content.gallery} />

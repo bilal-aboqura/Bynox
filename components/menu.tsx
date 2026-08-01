@@ -1,4 +1,7 @@
+import Link from 'next/link'
 import {
+  ArrowLeft,
+  ArrowRight,
   Coffee,
   CupSoda,
   Cake,
@@ -7,9 +10,11 @@ import {
   Gamepad2,
 } from 'lucide-react'
 import type { SiteContent } from '@/i18n/site-content'
+import type { Locale } from '@/i18n/config'
 
 type MenuProps = {
   content: SiteContent['menu']
+  locale: Locale
 }
 
 const iconMap = {
@@ -21,7 +26,8 @@ const iconMap = {
   gamepad: Gamepad2,
 } as const
 
-export function Menu({ content }: MenuProps) {
+export function Menu({ content, locale }: MenuProps) {
+  const SmartMenuArrow = locale === 'ar' ? ArrowLeft : ArrowRight
   return (
     <section id="menu" className="bg-card py-16 md:py-24">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
@@ -73,6 +79,16 @@ export function Menu({ content }: MenuProps) {
               </div>
             )
           })}
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <Link
+            href={`/${locale}/menu`}
+            className="inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-6 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            {locale === 'ar' ? 'جرّب المنيو الذكي' : 'Try the smart menu'}
+            <SmartMenuArrow className="size-5" aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </section>

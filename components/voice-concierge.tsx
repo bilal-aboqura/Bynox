@@ -23,6 +23,10 @@ import {
 
 type VoiceConciergeProps = {
   locale: Locale
+  variant?: 'floating' | 'menu-dock'
+  onAddMenuItem?: (itemId: string, quantity: number) => string
+  onShowMenuItem?: (itemId: string) => string
+  onOpenCart?: () => string
 }
 
 type Message = {
@@ -135,6 +139,9 @@ type LiveClientHandlers = {
   onSpeaking: () => void
   onListening: () => void
   onWebsiteControl: (message: string) => void
+  onMenuAction: (itemId: string, quantity: number) => string
+  onShowMenuItem: (itemId: string) => string
+  onOpenCart: () => string
   onError: (error: unknown) => void
 }
 
@@ -147,6 +154,7 @@ class GeminiLiveClient {
   private muteOutput = false
   private playbackTime = 0
   private playbackSources = new Set<AudioBufferSourceNode>()
+  private toolReplyTimer: number | null = null
 
   constructor(private readonly handlers: LiveClientHandlers) {}
 
@@ -205,6 +213,13 @@ class GeminiLiveClient {
   private handleMessage(message: LiveServerMessage) {
     const content = message.serverContent
 
+    // Gemini sends function calls as top-level messages that do not always
+    // include serverContent. Handle them before the content guard so menu
+    // actions cannot be silently dropped.
+    if (message.toolCall?.functionCalls?.length) {
+      void this.handleToolCalls(message.toolCall.functionCalls)
+    }
+
     if (!content) {
       return
     }
@@ -219,11 +234,13 @@ class GeminiLiveClient {
     }
 
     if (content.outputTranscription?.text) {
+      this.clearToolReplyTimer()
       this.handlers.onOutputTranscript(content.outputTranscription.text)
     }
 
     for (const part of content.modelTurn?.parts || []) {
       if (part.inlineData?.data) {
+        this.clearToolReplyTimer()
         this.handlers.onSpeaking()
         this.enqueuePlayback(part.inlineData.data)
       }
@@ -233,10 +250,6 @@ class GeminiLiveClient {
       if (part.text && !content.outputTranscription?.text) {
         this.handlers.onOutputTranscript(part.text)
       }
-    }
-
-    if (message.toolCall?.functionCalls?.length) {
-      void this.handleToolCalls(message.toolCall.functionCalls)
     }
 
     if (content.turnComplete) {
@@ -253,6 +266,48 @@ class GeminiLiveClient {
   ) {
     const functionResponses = await Promise.all(
       functionCalls.map(async (functionCall) => {
+        if (functionCall.name === 'add_menu_item_to_cart') {
+          const itemId = String(functionCall.args?.itemId || '')
+          const quantity = Math.max(
+            1,
+            Math.min(12, Number(functionCall.args?.quantity) || 1),
+          )
+          const result = this.handlers.onMenuAction(itemId, quantity)
+
+          return {
+            id: functionCall.id,
+            name: functionCall.name,
+            response: result.startsWith('Done')
+              ? { output: result }
+              : { error: result },
+          }
+        }
+
+        if (functionCall.name === 'show_menu_item_details') {
+          const itemId = String(functionCall.args?.itemId || '')
+          const result = this.handlers.onShowMenuItem(itemId)
+
+          return {
+            id: functionCall.id,
+            name: functionCall.name,
+            response: result.startsWith('Done')
+              ? { output: result }
+              : { error: result },
+          }
+        }
+
+        if (functionCall.name === 'open_menu_cart') {
+          const result = this.handlers.onOpenCart()
+
+          return {
+            id: functionCall.id,
+            name: functionCall.name,
+            response: result.startsWith('Done')
+              ? { output: result }
+              : { error: result },
+          }
+        }
+
         if (
           functionCall.name === 'scroll_to_section' ||
           functionCall.name === 'focus_booking_field'
@@ -313,6 +368,24 @@ class GeminiLiveClient {
     )
 
     this.session?.sendToolResponse({ functionResponses })
+    this.scheduleToolAcknowledgement()
+  }
+
+  private clearToolReplyTimer() {
+    if (this.toolReplyTimer) {
+      window.clearTimeout(this.toolReplyTimer)
+      this.toolReplyTimer = null
+    }
+  }
+
+  private scheduleToolAcknowledgement() {
+    this.clearToolReplyTimer()
+    this.toolReplyTimer = window.setTimeout(() => {
+      this.session?.sendRealtimeInput({
+        text: 'ردّي دلوقتي بجملة مصرية قصيرة وهادية تؤكد إن الحركة تمت قدام المستخدم، من غير استدعاء أداة تانية.',
+      })
+      this.toolReplyTimer = null
+    }, 1100)
   }
 
   private controlWebsite(
@@ -414,6 +487,7 @@ class GeminiLiveClient {
   }
 
   close() {
+    this.clearToolReplyTimer()
     this.stopPlayback()
     this.microphoneProcessor?.disconnect()
     this.microphoneSource?.disconnect()
@@ -455,10 +529,23 @@ function localizeWebsiteControlStatus(message: string) {
   return 'مش قادر أوصل للمكان ده دلوقتي.'
 }
 
-export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
+export function VoiceConcierge({
+  locale,
+  variant = 'floating',
+  onAddMenuItem,
+  onShowMenuItem,
+  onOpenCart,
+}: VoiceConciergeProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'welcome', role: 'assistant', content: labels.greeting },
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content:
+        variant === 'menu-dock'
+          ? 'أهلًا، أنا Minu. قولّي نفسك في إيه وأنا أضيفه للسلة.'
+          : labels.greeting,
+    },
   ])
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -476,6 +563,7 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
   const outputTranscriptRef = useRef('')
   const outputTranscriptionTimerRef = useRef<number | null>(null)
   const websiteControlTimerRef = useRef<number | null>(null)
+  const lastMenuItemIdRef = useRef<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -580,6 +668,69 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
             setWebsiteControlStatus(null)
           }, 2200)
         },
+        onMenuAction: (itemId, quantity) => {
+          if (!onAddMenuItem) {
+            return 'The smart menu cart is not available on this page.'
+          }
+
+          const result = onAddMenuItem(itemId, quantity)
+          if (result.startsWith('Done')) {
+            lastMenuItemIdRef.current = itemId
+          }
+          setWebsiteControlStatus(
+            result.startsWith('Done')
+              ? 'لقيته، هوريهولك وبضيفه للسلة'
+              : 'الصنف ده مش متاح دلوقتي',
+          )
+          if (websiteControlTimerRef.current) {
+            window.clearTimeout(websiteControlTimerRef.current)
+          }
+          websiteControlTimerRef.current = window.setTimeout(() => {
+            setWebsiteControlStatus(null)
+          }, 2600)
+          return result
+        },
+        onShowMenuItem: (itemId) => {
+          if (!onShowMenuItem) {
+            return 'The smart menu details are not available on this page.'
+          }
+
+          const result = onShowMenuItem(itemId)
+          if (result.startsWith('Done')) {
+            lastMenuItemIdRef.current = itemId
+          }
+          setWebsiteControlStatus(
+            result.startsWith('Done')
+              ? 'تمام، هفتحلك تفاصيله قدامك دلوقتي'
+              : 'الصنف ده مش متاح دلوقتي',
+          )
+          if (websiteControlTimerRef.current) {
+            window.clearTimeout(websiteControlTimerRef.current)
+          }
+          websiteControlTimerRef.current = window.setTimeout(() => {
+            setWebsiteControlStatus(null)
+          }, 2600)
+          return result
+        },
+        onOpenCart: () => {
+          if (!onOpenCart) {
+            return 'The smart menu cart is not available on this page.'
+          }
+
+          const result = onOpenCart()
+          setWebsiteControlStatus(
+            result.startsWith('Done')
+              ? 'تمام، بفتحلك السلة دلوقتي'
+              : 'مش قادر أفتح السلة دلوقتي',
+          )
+          if (websiteControlTimerRef.current) {
+            window.clearTimeout(websiteControlTimerRef.current)
+          }
+          websiteControlTimerRef.current = window.setTimeout(() => {
+            setWebsiteControlStatus(null)
+          }, 2200)
+          return result
+        },
         onError: (voiceError) => {
           setError(localizeVoiceError(voiceError))
           setVoiceState('error')
@@ -622,6 +773,66 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
   }
 
   async function sendTextToServer(nextMessages: Message[]) {
+    if (variant === 'menu-dock') {
+      const latestMessage = [...nextMessages]
+        .reverse()
+        .find((message) => message.role === 'user')
+      const response = await fetch('/api/menu-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          locale,
+          message: latestMessage?.content || '',
+          contextItemId: lastMenuItemIdRef.current,
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Menu assistant request failed.')
+      }
+
+      if (data.showItemId) {
+        lastMenuItemIdRef.current = String(data.showItemId)
+        onShowMenuItem?.(String(data.showItemId))
+        setWebsiteControlStatus('تمام، هفتحلك تفاصيله قدامك دلوقتي')
+        if (websiteControlTimerRef.current) {
+          window.clearTimeout(websiteControlTimerRef.current)
+        }
+        websiteControlTimerRef.current = window.setTimeout(() => {
+          setWebsiteControlStatus(null)
+        }, 2600)
+      }
+
+      if (data.openCart) {
+        onOpenCart?.()
+        setWebsiteControlStatus('تمام، بفتحلك السلة دلوقتي')
+        if (websiteControlTimerRef.current) {
+          window.clearTimeout(websiteControlTimerRef.current)
+        }
+        websiteControlTimerRef.current = window.setTimeout(() => {
+          setWebsiteControlStatus(null)
+        }, 2200)
+      }
+
+      for (const item of data.items || []) {
+        lastMenuItemIdRef.current = String(item.id)
+        onAddMenuItem?.(String(item.id), Number(item.quantity) || 1)
+      }
+
+      if (data.items?.length) {
+        setWebsiteControlStatus('لقيته، هوريهولك وبضيفه للسلة')
+        if (websiteControlTimerRef.current) {
+          window.clearTimeout(websiteControlTimerRef.current)
+        }
+        websiteControlTimerRef.current = window.setTimeout(() => {
+          setWebsiteControlStatus(null)
+        }, 2600)
+      }
+
+      return data.reply as string
+    }
+
     const response = await fetch('/api/assistant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -722,6 +933,148 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
           : voiceState === 'error'
             ? labels.voiceError
             : labels.idle)
+
+  const menuVoiceLabel =
+    error ||
+    (voiceState === 'connecting'
+      ? 'بوصّلك بـ Minu...'
+      : voiceState === 'listening'
+        ? 'بسمعك يا Minu...'
+        : voiceState === 'speaking'
+          ? 'Minu بيرد عليك...'
+          : voiceState === 'error'
+            ? 'الصوت مش متاح دلوقتي'
+            : 'اضغط واتكلم')
+
+  if (variant === 'menu-dock') {
+    return (
+      <div
+        className="menu-dock-safe fixed inset-x-0 bottom-0 z-50 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        dir="rtl"
+      >
+        {isOpen && (
+          <section
+            aria-label="محادثة Minu النصية"
+            className="menu-chat-enter mx-auto mb-2 flex max-h-[min(24rem,55dvh)] w-full max-w-xl flex-col overflow-hidden rounded-[14px] border border-border bg-white shadow-sm"
+          >
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div>
+                <p className="font-semibold text-foreground">اطلب مع Minu</p>
+                <p className="text-sm text-muted-foreground">اكتب طلبك، وهضيفه للسلة</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="إغلاق المحادثة"
+                className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-3">
+              {messages.slice(-5).map((message) => (
+                <p
+                  key={message.id}
+                  className={`max-w-[85%] rounded-[12px] px-3 py-2 text-sm leading-6 ${
+                    message.role === 'user'
+                      ? 'self-start bg-primary text-primary-foreground'
+                      : 'self-end bg-muted text-foreground'
+                  }`}
+                >
+                  {message.content}
+                </p>
+              ))}
+              {isSending && (
+                <p className="self-end text-sm text-muted-foreground">Minu بيرتب طلبك...</p>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="border-t border-border p-3">
+              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5">
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="اكتب طلبك هنا"
+                  disabled={isSending}
+                  className="min-w-0 flex-1 bg-transparent px-1 text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={!input.trim() || isSending}
+                  aria-label="إرسال الطلب"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-40"
+                >
+                  {isSending ? (
+                    <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Send className="size-5" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {websiteControlStatus && (
+          <p
+            aria-live="polite"
+            className="mx-auto mb-2 w-fit max-w-full rounded-full bg-[#E6F7EE] px-4 py-2 text-center text-sm font-semibold text-[#17643A]"
+          >
+            {websiteControlStatus}
+          </p>
+        )}
+
+        <div className="mx-auto flex min-h-20 w-full max-w-xl items-center gap-2 rounded-[16px] border border-border bg-white px-2.5 py-2 shadow-sm sm:gap-3 sm:px-3">
+          <button
+            type="button"
+            onClick={isVoiceActive ? stopVoice : () => void startVoice()}
+            aria-label={isVoiceActive ? 'إيقاف المحادثة الصوتية' : 'ابدأ الطلب بالصوت'}
+            aria-busy={voiceState === 'connecting'}
+            className={`flex size-14 shrink-0 items-center justify-center rounded-full text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              isVoiceActive ? 'bg-foreground hover:bg-foreground/90' : 'bg-primary hover:bg-primary/90'
+            }`}
+          >
+            {voiceState === 'connecting' ? (
+              <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+            ) : isVoiceActive ? (
+              <MicOff className="size-6" aria-hidden="true" />
+            ) : (
+              <Mic className="size-6" aria-hidden="true" />
+            )}
+          </button>
+
+          <div className="min-w-0 flex-1 text-center">
+            <div className="mb-1 flex h-5 items-end justify-center gap-1" aria-hidden="true">
+              {[3, 6, 4, 8, 5, 7, 3].map((height, index) => (
+                <span
+                  key={index}
+                  className={`w-1 rounded-full bg-[#1D9B5F] ${
+                    isVoiceLive ? 'voice-meter-bar-active' : ''
+                  }`}
+                  style={{ height: `${height * 2}px` }}
+                />
+              ))}
+            </div>
+            <p className="truncate text-sm font-semibold text-foreground">{menuVoiceLabel}</p>
+            <p className="text-xs text-muted-foreground">اطلب أي صنف أو وجبة كاملة</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsOpen((current) => !current)}
+            aria-expanded={isOpen}
+            aria-label="اكتب طلبك"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <MessageCircle className="size-5" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -930,9 +1283,9 @@ export function VoiceConcierge({ locale: _locale }: VoiceConciergeProps) {
             {isSending && (
               <div className="flex justify-end">
                 <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-3.5 py-2.5">
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:0ms]" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:150ms]" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:300ms]" />
                 </div>
               </div>
             )}

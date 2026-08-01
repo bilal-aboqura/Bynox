@@ -3,12 +3,17 @@ import { NextResponse } from 'next/server'
 import { buildAssistantInstructions } from '@/lib/cafe-knowledge'
 import { bookingFunctionDeclaration } from '@/lib/gemini-assistant'
 import { websiteControlFunctionDeclarations } from '@/lib/website-control'
+import {
+  addMenuItemFunctionDeclaration,
+  openMenuCartFunctionDeclaration,
+  showMenuItemFunctionDeclaration,
+} from '@/lib/menu-catalog'
 
 export const runtime = 'nodejs'
 
 const liveModel =
   process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview'
-const liveVoice = process.env.GEMINI_LIVE_VOICE || 'Charon'
+const liveVoice = process.env.GEMINI_LIVE_VOICE || 'Aoede'
 
 export async function POST() {
   try {
@@ -54,6 +59,9 @@ export async function POST() {
               {
                 functionDeclarations: [
                   bookingFunctionDeclaration,
+                  showMenuItemFunctionDeclaration,
+                  addMenuItemFunctionDeclaration,
+                  openMenuCartFunctionDeclaration,
                   ...websiteControlFunctionDeclarations,
                 ],
               },
