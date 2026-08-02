@@ -975,7 +975,7 @@ export function VoiceConcierge({
               {messages.slice(-5).map((message) => (
                 <p
                   key={message.id}
-                  className={`max-w-[85%] rounded-[12px] px-3 py-2 text-sm leading-6 ${
+                  className={`max-w-[85%] break-words rounded-[12px] px-3 py-2 text-sm leading-6 ${
                     message.role === 'user'
                       ? 'self-start bg-primary text-primary-foreground'
                       : 'self-end bg-muted text-foreground'

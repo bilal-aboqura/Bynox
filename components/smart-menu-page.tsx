@@ -146,6 +146,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
   const [cartArriving, setCartArriving] = useState(false)
   const agentTimersRef = useRef<number[]>([])
   const queuedAgentDelayRef = useRef(0)
+  const selectedProductIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     return () => {
@@ -230,12 +231,14 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
   )
 
   function openProductDetails(itemId: string, openedByAgent = false) {
+    selectedProductIdRef.current = itemId
     setSelectedProductId(itemId)
     setDetailQuantity(1)
     setDetailOpenedByAgent(openedByAgent)
   }
 
   function closeProductDetails() {
+    selectedProductIdRef.current = null
     setSelectedProductId(null)
     setDetailQuantity(1)
     setDetailOpenedByAgent(false)
@@ -333,8 +336,8 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
       }
 
       const safeQuantity = Math.max(1, Math.min(12, quantity))
-      const isAlreadyOpen = selectedProductId === itemId
-      const duration = isAlreadyOpen ? 1150 : 2500
+      const isAlreadyOpen = selectedProductIdRef.current === itemId
+      const duration = isAlreadyOpen ? 1350 : 2500
       const baseDelay = queuedAgentDelayRef.current
       queuedAgentDelayRef.current += duration
 
@@ -357,7 +360,10 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
       })
       schedule(60, () => {
         if (isAlreadyOpen) {
-          moveAgentPointerTo('product-detail-add-action')
+          document.getElementById('product-detail-add-action')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
           return
         }
 
@@ -366,10 +372,9 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
           block: 'center',
         })
       })
-      schedule(isAlreadyOpen ? 420 : 430, () => {
+      schedule(isAlreadyOpen ? 360 : 430, () => {
         if (isAlreadyOpen) {
-          moveAgentPointerTo('product-detail-add-action', true)
-          setAgentActivity({ productId: itemId, phase: 'adding' })
+          moveAgentPointerTo('product-detail-add-action')
           return
         }
 
@@ -385,7 +390,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
         openProductDetails(itemId, true)
         setDetailQuantity(safeQuantity)
       })
-      schedule(isAlreadyOpen ? 470 : 1080, () => {
+      schedule(isAlreadyOpen ? 420 : 1080, () => {
         if (!isAlreadyOpen) {
           document.getElementById('product-detail-add-action')?.scrollIntoView({
             behavior: 'smooth',
@@ -393,22 +398,25 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
           })
         }
       })
-      schedule(isAlreadyOpen ? 500 : 1390, () => {
+      schedule(isAlreadyOpen ? 450 : 1390, () => {
         if (!isAlreadyOpen) {
           moveAgentPointerTo('product-detail-add-action')
         }
       })
-      schedule(isAlreadyOpen ? 520 : 1800, () => {
+      schedule(isAlreadyOpen ? 720 : 1800, () => {
         moveAgentPointerTo('product-detail-add-action', true)
         setAgentActivity({ productId: itemId, phase: 'adding' })
         addMenuItem(itemId, safeQuantity)
         setCartArriving(true)
       })
-      schedule(isAlreadyOpen ? 780 : 2150, () => {
+      schedule(isAlreadyOpen ? 1020 : 2150, () => {
+        if (selectedProductIdRef.current === itemId) {
+          selectedProductIdRef.current = null
+        }
         setSelectedProductId((current) => (current === itemId ? null : current))
         setDetailOpenedByAgent(false)
       })
-      schedule(isAlreadyOpen ? 980 : 2350, () => {
+      schedule(isAlreadyOpen ? 1200 : 2350, () => {
         setAgentActivity(null)
         setAgentPointer(null)
         setCartArriving(false)
@@ -418,12 +426,13 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
         )
       })
 
-      return `Done. Found ${product.nameEn}, showed it on the menu, and added ${safeQuantity} to the cart.`
+      return isAlreadyOpen
+        ? `Done. Added ${safeQuantity} x ${product.nameEn} directly from the open product details.`
+        : `Done. Found ${product.nameEn}, showed it on the menu, and added ${safeQuantity} to the cart.`
     },
     [
       addMenuItem,
       moveAgentPointerTo,
-      selectedProductId,
       showAgentPointerAtDock,
     ],
   )
@@ -550,7 +559,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
 
           <nav
             aria-label={isArabic ? 'تصنيفات المنيو' : 'Menu categories'}
-            className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="mt-3 flex flex-wrap gap-2 pb-1"
           >
             {menuCategories.map((item) => {
               const selected = category === item.id
@@ -560,7 +569,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
                   type="button"
                   aria-pressed={selected}
                   onClick={() => setCategory(item.id)}
-                  className={`min-h-11 shrink-0 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                     selected
                       ? 'bg-primary text-primary-foreground'
                       : 'border border-[#DCCDC3] bg-white text-foreground hover:bg-[#F6EEE8]'
@@ -586,14 +595,14 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
         {filteredProducts.length > 0 ? (
           <section
             aria-label={isArabic ? 'منتجات المنيو' : 'Menu products'}
-            className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-5 xl:grid-cols-4"
+            className="grid grid-cols-1 gap-x-3 gap-y-6 min-[360px]:grid-cols-2 md:grid-cols-3 md:gap-5 xl:grid-cols-4"
           >
             {filteredProducts.map((product) => (
               <article
                 key={product.id}
                 id={`menu-product-${product.id}`}
                 data-agent-focused={agentActivity?.productId === product.id || undefined}
-                className="min-w-0 scroll-mt-44 rounded-[14px]"
+                className="min-w-0 scroll-mt-72 rounded-[14px] sm:scroll-mt-44"
               >
                 <button
                   type="button"
@@ -755,16 +764,18 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
                 <X className="size-5" aria-hidden="true" />
               </button>
               {detailOpenedByAgent && (
-                <span className="absolute start-3 top-3 flex items-center gap-1.5 rounded-full bg-foreground px-3 py-2 text-sm font-semibold text-white">
+                <span className="absolute start-3 top-3 flex max-w-[calc(100%-4.75rem)] items-center gap-1.5 rounded-full bg-foreground px-3 py-2 text-sm font-semibold text-white">
                   <Sparkles className="size-4 text-sunshine" aria-hidden="true" />
-                  {isArabic ? 'Minu اختارت ده لطلبك' : 'Minu picked this for your order'}
+                  <span className="truncate">
+                    {isArabic ? 'Minu فتحتلك المنتج' : 'Minu opened this product'}
+                  </span>
                 </span>
               )}
             </div>
 
             <div className="px-4 pt-5 sm:px-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
+              <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between min-[420px]:gap-4">
+                <div className="min-w-0">
                   <h2 id="product-detail-title" className="text-2xl font-bold text-foreground">
                     {isArabic ? selectedProduct.nameAr : selectedProduct.nameEn}
                   </h2>
@@ -813,8 +824,8 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
                 </ul>
               </div>
 
-              <div className="mt-6 flex items-center gap-3">
-                <div className="flex h-12 shrink-0 items-center rounded-full border border-border">
+              <div className="mt-6 flex flex-col items-stretch gap-3 min-[420px]:flex-row min-[420px]:items-center">
+                <div className="flex h-12 w-fit shrink-0 self-center items-center rounded-full border border-border min-[420px]:self-auto">
                   <button
                     type="button"
                     onClick={() => setDetailQuantity((current) => Math.max(1, current - 1))}
@@ -840,7 +851,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
                     addMenuItem(selectedProduct.id, detailQuantity)
                     closeProductDetails()
                   }}
-                  className="min-h-12 flex-1 rounded-full bg-primary px-5 font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="min-h-12 w-full flex-1 rounded-full bg-primary px-4 font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   {t.addToCart} · {formatPrice(selectedProduct.price * detailQuantity)}
                 </button>
