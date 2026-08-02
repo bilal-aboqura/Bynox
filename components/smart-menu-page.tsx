@@ -142,11 +142,15 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
   const [detailOpenedByAgent, setDetailOpenedByAgent] = useState(false)
   const [agentActivity, setAgentActivity] = useState<AgentActivity | null>(null)
   const [agentPointer, setAgentPointer] = useState<AgentPointer | null>(null)
-  const [agentCartOpening, setAgentCartOpening] = useState(false)
+  const [agentCartAction, setAgentCartAction] = useState<
+    'opening' | 'removing' | null
+  >(null)
   const [cartArriving, setCartArriving] = useState(false)
   const agentTimersRef = useRef<number[]>([])
   const queuedAgentDelayRef = useRef(0)
   const selectedProductIdRef = useRef<string | null>(null)
+  const cartRef = useRef<Cart>({})
+  const cartOpenRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -214,10 +218,14 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
       }
 
       const safeQuantity = Math.max(1, Math.min(12, quantity))
-      setCart((current) => ({
-        ...current,
-        [itemId]: Math.min(12, (current[itemId] || 0) + safeQuantity),
-      }))
+      setCart((current) => {
+        const next = {
+          ...current,
+          [itemId]: Math.min(12, (current[itemId] || 0) + safeQuantity),
+        }
+        cartRef.current = next
+        return next
+      })
       setToast(
         isArabic
           ? `تمت إضافة ${product.nameAr} للسلة`
@@ -242,6 +250,16 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
     setSelectedProductId(null)
     setDetailQuantity(1)
     setDetailOpenedByAgent(false)
+  }
+
+  function openCart() {
+    cartOpenRef.current = true
+    setCartOpen(true)
+  }
+
+  function closeCart() {
+    cartOpenRef.current = false
+    setCartOpen(false)
   }
 
   const showAgentPointerAtDock = useCallback(() => {
@@ -438,7 +456,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
   )
 
   const openCartWithAgent = useCallback(() => {
-    if (cartOpen) {
+    if (cartOpenRef.current) {
       return 'Done. The cart is already open on screen.'
     }
 
@@ -452,7 +470,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
 
     schedule(0, () => {
       closeProductDetails()
-      setAgentCartOpening(true)
+      setAgentCartAction('opening')
       showAgentPointerAtDock()
     })
     schedule(100, () => {
@@ -463,11 +481,11 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
     })
     schedule(720, () => {
       setCheckoutOpen(false)
-      setCartOpen(true)
+      openCart()
     })
     schedule(980, () => {
       setAgentPointer(null)
-      setAgentCartOpening(false)
+      setAgentCartAction(null)
       queuedAgentDelayRef.current = Math.max(
         0,
         queuedAgentDelayRef.current - duration,
@@ -475,25 +493,108 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
     })
 
     return 'Done. Opened the shopping cart on screen.'
-  }, [cartOpen, moveAgentPointerTo, showAgentPointerAtDock])
+  }, [moveAgentPointerTo, showAgentPointerAtDock])
 
-  function updateQuantity(itemId: string, quantity: number) {
+  const updateQuantity = useCallback((itemId: string, quantity: number) => {
     setCart((current) => {
       if (quantity <= 0) {
         const next = { ...current }
         delete next[itemId]
+        cartRef.current = next
         return next
       }
 
-      return { ...current, [itemId]: Math.min(12, quantity) }
+      const next = { ...current, [itemId]: Math.min(12, quantity) }
+      cartRef.current = next
+      return next
     })
-  }
+  }, [])
+
+  const removeMenuItemWithAgent = useCallback(
+    (itemId: string, quantity = 1, removeAll = false) => {
+      const product = getMenuProduct(itemId)
+      const currentQuantity = cartRef.current[itemId] || 0
+
+      if (!product || currentQuantity <= 0) {
+        return 'The requested item is not in the cart.'
+      }
+
+      const safeQuantity = Math.max(
+        1,
+        Math.min(currentQuantity, Math.min(12, quantity)),
+      )
+      const isCartAlreadyOpen = cartOpenRef.current
+      const duration = isCartAlreadyOpen ? 1250 : 2050
+      const baseDelay = queuedAgentDelayRef.current
+      queuedAgentDelayRef.current += duration
+      const schedule = (delay: number, callback: () => void) => {
+        const timer = window.setTimeout(callback, baseDelay + delay)
+        agentTimersRef.current.push(timer)
+      }
+
+      schedule(0, () => {
+        closeProductDetails()
+        setAgentCartAction('removing')
+        showAgentPointerAtDock()
+      })
+
+      if (!isCartAlreadyOpen) {
+        schedule(100, () => moveAgentPointerTo('menu-cart-trigger'))
+        schedule(480, () => moveAgentPointerTo('menu-cart-trigger', true))
+        schedule(650, () => {
+          setCheckoutOpen(false)
+          openCart()
+        })
+      }
+
+      schedule(isCartAlreadyOpen ? 60 : 830, () => {
+        document.getElementById(`cart-remove-${itemId}`)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      })
+      schedule(isCartAlreadyOpen ? 340 : 1080, () => {
+        moveAgentPointerTo(`cart-remove-${itemId}`)
+      })
+      schedule(isCartAlreadyOpen ? 720 : 1480, () => {
+        moveAgentPointerTo(`cart-remove-${itemId}`, true)
+        updateQuantity(
+          itemId,
+          removeAll ? 0 : Math.max(0, currentQuantity - safeQuantity),
+        )
+        setToast(
+          isArabic
+            ? removeAll
+              ? `تم حذف ${product.nameAr} من السلة`
+              : `تم حذف ${safeQuantity} من ${product.nameAr}`
+            : removeAll
+              ? `${product.nameEn} was removed from the cart`
+              : `Removed ${safeQuantity} x ${product.nameEn}`,
+        )
+        window.setTimeout(() => setToast(null), 2400)
+      })
+      schedule(isCartAlreadyOpen ? 1030 : 1800, () => {
+        setAgentPointer(null)
+        setAgentCartAction(null)
+        queuedAgentDelayRef.current = Math.max(
+          0,
+          queuedAgentDelayRef.current - duration,
+        )
+      })
+
+      return removeAll
+        ? `Done. Removed ${product.nameEn} from the cart.`
+        : `Done. Removed ${safeQuantity} x ${product.nameEn} from the cart.`
+    },
+    [isArabic, moveAgentPointerTo, showAgentPointerAtDock, updateQuantity],
+  )
 
   function resetOrder() {
+    cartRef.current = {}
     setCart({})
     setOrderComplete(false)
     setCheckoutOpen(false)
-    setCartOpen(false)
+    closeCart()
     setCustomerName('')
     setTableNumber('')
   }
@@ -525,7 +626,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
           <button
             id="menu-cart-trigger"
             type="button"
-            onClick={() => setCartOpen(true)}
+            onClick={openCart}
             aria-label={`${t.cart}: ${itemCount}`}
             data-agent-cart-active={cartArriving || undefined}
             className="relative flex size-11 items-center justify-center rounded-full border border-[#E2D5CC] text-foreground transition-colors hover:bg-[#F6EEE8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -698,7 +799,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
         </div>
       )}
 
-      {agentCartOpening && (
+      {agentCartAction && (
         <div
           role="status"
           aria-live="polite"
@@ -709,7 +810,15 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-white/75">{isArabic ? 'Minu بتتحرك دلوقتي' : 'Minu is moving now'}</p>
-            <p className="truncate font-bold">{isArabic ? 'بفتحلك السلة' : 'Opening your cart'}</p>
+            <p className="truncate font-bold">
+              {agentCartAction === 'removing'
+                ? isArabic
+                  ? 'بشيل الصنف من السلة'
+                  : 'Removing the item'
+                : isArabic
+                  ? 'بفتحلك السلة'
+                  : 'Opening your cart'}
+            </p>
           </div>
         </div>
       )}
@@ -865,7 +974,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
         <button
           id="menu-cart-summary"
           type="button"
-          onClick={() => setCartOpen(true)}
+          onClick={openCart}
           data-agent-cart-active={cartArriving || undefined}
           className="fixed bottom-[108px] left-1/2 z-40 flex min-h-14 w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 items-center justify-between gap-3 rounded-[14px] bg-foreground px-4 text-start text-white shadow-sm transition-colors hover:bg-[#2B120D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
@@ -892,7 +1001,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
           <button
             type="button"
             aria-label={t.close}
-            onClick={() => setCartOpen(false)}
+            onClick={closeCart}
             className="menu-sheet-backdrop z-modal-backdrop absolute inset-0 bg-black/35"
           />
           <aside
@@ -914,7 +1023,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
               </div>
               <button
                 type="button"
-                onClick={() => setCartOpen(false)}
+                onClick={closeCart}
                 aria-label={t.close}
                 className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
@@ -1039,6 +1148,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
                             </p>
                           </div>
                           <button
+                            id={`cart-remove-${product.id}`}
                             type="button"
                             onClick={() => updateQuantity(product.id, 0)}
                             aria-label={`${t.remove} ${isArabic ? product.nameAr : product.nameEn}`}
@@ -1098,6 +1208,7 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
           onAddMenuItem={addMenuItemWithAgent}
           onShowMenuItem={showMenuItemWithAgent}
           onOpenCart={openCartWithAgent}
+          onRemoveMenuItem={removeMenuItemWithAgent}
         />
       </div>
     </div>

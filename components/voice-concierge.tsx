@@ -27,6 +27,11 @@ type VoiceConciergeProps = {
   onAddMenuItem?: (itemId: string, quantity: number) => string
   onShowMenuItem?: (itemId: string) => string
   onOpenCart?: () => string
+  onRemoveMenuItem?: (
+    itemId: string,
+    quantity: number,
+    removeAll: boolean,
+  ) => string
 }
 
 type Message = {
@@ -142,6 +147,11 @@ type LiveClientHandlers = {
   onMenuAction: (itemId: string, quantity: number) => string
   onShowMenuItem: (itemId: string) => string
   onOpenCart: () => string
+  onRemoveMenuItem: (
+    itemId: string,
+    quantity: number,
+    removeAll: boolean,
+  ) => string
   onError: (error: unknown) => void
 }
 
@@ -298,6 +308,28 @@ class GeminiLiveClient {
 
         if (functionCall.name === 'open_menu_cart') {
           const result = this.handlers.onOpenCart()
+
+          return {
+            id: functionCall.id,
+            name: functionCall.name,
+            response: result.startsWith('Done')
+              ? { output: result }
+              : { error: result },
+          }
+        }
+
+        if (functionCall.name === 'remove_menu_item_from_cart') {
+          const itemId = String(functionCall.args?.itemId || '')
+          const quantity = Math.max(
+            1,
+            Math.min(12, Number(functionCall.args?.quantity) || 1),
+          )
+          const removeAll = Boolean(functionCall.args?.removeAll)
+          const result = this.handlers.onRemoveMenuItem(
+            itemId,
+            quantity,
+            removeAll,
+          )
 
           return {
             id: functionCall.id,
@@ -535,6 +567,7 @@ export function VoiceConcierge({
   onAddMenuItem,
   onShowMenuItem,
   onOpenCart,
+  onRemoveMenuItem,
 }: VoiceConciergeProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
@@ -731,6 +764,25 @@ export function VoiceConcierge({
           }, 2200)
           return result
         },
+        onRemoveMenuItem: (itemId, quantity, removeAll) => {
+          if (!onRemoveMenuItem) {
+            return 'The smart menu cart is not available on this page.'
+          }
+
+          const result = onRemoveMenuItem(itemId, quantity, removeAll)
+          setWebsiteControlStatus(
+            result.startsWith('Done')
+              ? 'تمام، بشيل الصنف من السلة دلوقتي'
+              : 'الصنف ده مش موجود في السلة',
+          )
+          if (websiteControlTimerRef.current) {
+            window.clearTimeout(websiteControlTimerRef.current)
+          }
+          websiteControlTimerRef.current = window.setTimeout(() => {
+            setWebsiteControlStatus(null)
+          }, 2400)
+          return result
+        },
         onError: (voiceError) => {
           setError(localizeVoiceError(voiceError))
           setVoiceState('error')
@@ -813,6 +865,14 @@ export function VoiceConcierge({
         websiteControlTimerRef.current = window.setTimeout(() => {
           setWebsiteControlStatus(null)
         }, 2200)
+      }
+
+      for (const item of data.removeItems || []) {
+        onRemoveMenuItem?.(
+          String(item.id),
+          Number(item.quantity) || 1,
+          Boolean(item.removeAll),
+        )
       }
 
       for (const item of data.items || []) {

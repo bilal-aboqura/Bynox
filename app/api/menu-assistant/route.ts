@@ -121,6 +121,34 @@ function parseDirectOpenCart(message: string) {
   return mentionsCart && hasOpenIntent
 }
 
+function parseDirectRemove(message: string, contextItemId?: string) {
+  const normalized = normalizeArabic(message)
+  const hasRemoveIntent =
+    /(^|\s)(امسح|امسحي|شيل|شيلي|شيله|شيليه|احذف|احذفي|الغي|الغيه|لغي|لغيه|طلع|طلعي)(\s|$)/.test(
+      normalized,
+    ) || /من السله|من الكارت/.test(normalized)
+
+  if (!hasRemoveIntent) {
+    return []
+  }
+
+  const itemIds = findDirectItemIds(normalized)
+  if (itemIds.length === 0 && contextItemId && getMenuProduct(contextItemId)) {
+    itemIds.push(contextItemId)
+  }
+
+  const hasExplicitQuantity =
+    /\b\d{1,2}\b|[١٢٣٤٥٦٧٨٩]|واحد|واحده|اتنين|اثنين|تلاته|ثلاثه|اربعه|اربعة/.test(
+      normalized,
+    )
+
+  return itemIds.map((id) => ({
+    id,
+    quantity: requestedQuantity(normalized),
+    removeAll: !hasExplicitQuantity,
+  }))
+}
+
 const responseSchema = {
   type: 'object',
   additionalProperties: false,
@@ -140,8 +168,21 @@ const responseSchema = {
     },
     showItemId: { type: 'string' },
     openCart: { type: 'boolean' },
+    removeItems: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          id: { type: 'string' },
+          quantity: { type: 'integer', minimum: 1, maximum: 12 },
+          removeAll: { type: 'boolean' },
+        },
+        required: ['id', 'quantity', 'removeAll'],
+      },
+    },
   },
-  required: ['reply', 'items', 'showItemId', 'openCart'],
+  required: ['reply', 'items', 'showItemId', 'openCart', 'removeItems'],
 } as const
 
 export async function POST(request: Request) {
@@ -161,6 +202,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
     }
 
+    const directRemoveItems = parseDirectRemove(
+      body.message,
+      body.contextItemId,
+    ).filter((item) => Boolean(getMenuProduct(item.id)))
+
+    if (directRemoveItems.length > 0) {
+      return NextResponse.json({
+        reply:
+          body.locale === 'ar'
+            ? 'حاضر، هشيله من السلة قدامك دلوقتي.'
+            : 'Sure — I’m removing it from your cart now.',
+        items: [],
+        showItemId: '',
+        openCart: false,
+        removeItems: directRemoveItems,
+      })
+    }
+
     if (parseDirectOpenCart(body.message)) {
       return NextResponse.json({
         reply:
@@ -170,6 +229,7 @@ export async function POST(request: Request) {
         items: [],
         showItemId: '',
         openCart: true,
+        removeItems: [],
       })
     }
 
@@ -191,6 +251,7 @@ export async function POST(request: Request) {
         items: directItems,
         showItemId: '',
         openCart: false,
+        removeItems: [],
       })
     }
 
@@ -208,6 +269,7 @@ export async function POST(request: Request) {
         items: [],
         showItemId: directShowProduct.id,
         openCart: false,
+        removeItems: [],
       })
     }
 
@@ -227,6 +289,7 @@ export async function POST(request: Request) {
           'Return requested items only when the user clearly asks to add/order them.',
           'When the user asks to show, open, see, or view details for one specific item, return its exact id in showItemId. Otherwise return an empty string.',
           'When the user asks to see, open, or review their cart or basket, set openCart to true. Otherwise set it to false. Never just say the cart is visible.',
+          'When the user asks to remove an item from the cart, return it in removeItems and do not return it in items. If no quantity is stated set removeAll true; otherwise set removeAll false and use the exact quantity. Use the contextItemId for a clear reference like شيله or remove it.',
           'If the user asks for a recommendation without ordering, return an empty items array and recommend at most two options.',
           'If quantity is omitted, use 1. Never invent ids, items, prices, or offers.',
           `CATALOG: ${JSON.stringify(catalog)}`,
@@ -241,12 +304,24 @@ export async function POST(request: Request) {
       items?: Array<{ id?: string; quantity?: number }>
       showItemId?: string
       openCart?: boolean
+      removeItems?: Array<{
+        id?: string
+        quantity?: number
+        removeAll?: boolean
+      }>
     }
     const items = (parsed.items || [])
       .filter((item) => item.id && getMenuProduct(item.id))
       .map((item) => ({
         id: item.id as string,
         quantity: Math.max(1, Math.min(12, Number(item.quantity) || 1)),
+      }))
+    const removeItems = (parsed.removeItems || [])
+      .filter((item) => item.id && getMenuProduct(item.id))
+      .map((item) => ({
+        id: item.id as string,
+        quantity: Math.max(1, Math.min(12, Number(item.quantity) || 1)),
+        removeAll: Boolean(item.removeAll),
       }))
 
     return NextResponse.json({
@@ -259,6 +334,7 @@ export async function POST(request: Request) {
           ? parsed.showItemId
           : '',
       openCart: Boolean(parsed.openCart),
+      removeItems,
     })
   } catch (error) {
     console.error('Menu assistant route error', error)

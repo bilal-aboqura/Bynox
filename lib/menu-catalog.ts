@@ -363,6 +363,35 @@ export const openMenuCartFunctionDeclaration = {
   },
 } as const
 
+export const removeMenuItemFunctionDeclaration = {
+  name: 'remove_menu_item_from_cart',
+  description:
+    'Remove a real MinuHub item from the visible shopping cart. If the guest says remove or delete the item without a quantity, remove the whole line. If they specify a quantity, remove only that amount.',
+  parametersJsonSchema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      itemId: {
+        type: 'string',
+        enum: menuCatalog.map((item) => item.id),
+        description: 'Exact catalog item id to remove.',
+      },
+      quantity: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 12,
+        description: 'Quantity to remove. Use 1 when removeAll is true.',
+      },
+      removeAll: {
+        type: 'boolean',
+        description:
+          'True when the guest wants the entire item line removed; false when they specify a quantity to subtract.',
+      },
+    },
+    required: ['itemId', 'quantity', 'removeAll'],
+  },
+} as const
+
 export function getMenuProduct(id: string) {
   return menuCatalog.find((item) => item.id === id)
 }

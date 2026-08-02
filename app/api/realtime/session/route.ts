@@ -6,6 +6,7 @@ import { websiteControlFunctionDeclarations } from '@/lib/website-control'
 import {
   addMenuItemFunctionDeclaration,
   openMenuCartFunctionDeclaration,
+  removeMenuItemFunctionDeclaration,
   showMenuItemFunctionDeclaration,
 } from '@/lib/menu-catalog'
 
@@ -13,7 +14,7 @@ export const runtime = 'nodejs'
 
 const liveModel =
   process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview'
-const liveVoice = process.env.GEMINI_LIVE_VOICE || 'Aoede'
+const liveVoice = process.env.GEMINI_LIVE_VOICE || 'Achernar'
 
 export async function POST() {
   try {
@@ -62,6 +63,7 @@ export async function POST() {
                   showMenuItemFunctionDeclaration,
                   addMenuItemFunctionDeclaration,
                   openMenuCartFunctionDeclaration,
+                  removeMenuItemFunctionDeclaration,
                   ...websiteControlFunctionDeclarations,
                 ],
               },
