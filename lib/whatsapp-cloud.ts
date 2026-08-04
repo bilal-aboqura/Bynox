@@ -1,7 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 const WHATSAPP_TEXT_LIMIT = 3_500
-const WHATSAPP_AUDIO_LIMIT_BYTES = 20 * 1024 * 1024
+const WHATSAPP_AUDIO_LIMIT_BYTES = 16 * 1024 * 1024
+const WHATSAPP_MEDIA_TIMEOUT_MS = 15_000
 
 type WhatsAppMediaMetadata = {
   url?: string
@@ -168,6 +169,7 @@ export async function markWhatsAppMessageRead(messageId: string) {
 export async function downloadWhatsAppAudio(mediaId: string) {
   const metadataResponse = await fetch(graphApiUrl(mediaId), {
     headers: authorizationHeaders(),
+    signal: AbortSignal.timeout(WHATSAPP_MEDIA_TIMEOUT_MS),
   })
 
   if (!metadataResponse.ok) {
@@ -184,11 +186,12 @@ export async function downloadWhatsAppAudio(mediaId: string) {
     typeof metadata.file_size === 'number' &&
     metadata.file_size > WHATSAPP_AUDIO_LIMIT_BYTES
   ) {
-    throw new Error('The WhatsApp voice note is larger than 20 MB.')
+    throw new Error('The WhatsApp voice note is larger than 16 MB.')
   }
 
   const mediaResponse = await fetch(metadata.url, {
     headers: authorizationHeaders(),
+    signal: AbortSignal.timeout(WHATSAPP_MEDIA_TIMEOUT_MS),
   })
 
   if (!mediaResponse.ok) {
@@ -198,11 +201,11 @@ export async function downloadWhatsAppAudio(mediaId: string) {
   const bytes = await mediaResponse.arrayBuffer()
 
   if (bytes.byteLength > WHATSAPP_AUDIO_LIMIT_BYTES) {
-    throw new Error('The WhatsApp voice note is larger than 20 MB.')
+    throw new Error('The WhatsApp voice note is larger than 16 MB.')
   }
 
   return {
     data: Buffer.from(bytes).toString('base64'),
-    mimeType: metadata.mime_type,
+    mimeType: metadata.mime_type.split(';')[0].trim().toLowerCase(),
   }
 }

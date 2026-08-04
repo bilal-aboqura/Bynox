@@ -52,6 +52,30 @@ const SESSION_TTL_MS = 6 * 60 * 60 * 1000
 const MAX_SESSIONS = 200
 const sessions = new Map<string, WhatsAppSession>()
 
+function getWhatsAppModels() {
+  const configured = [
+    process.env.GEMINI_WHATSAPP_MODEL,
+    ...(process.env.GEMINI_WHATSAPP_FALLBACK_MODELS || '').split(','),
+    process.env.GEMINI_TEXT_MODEL,
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-flash-lite',
+  ]
+
+  return configured
+    .map((model) => model?.trim())
+    .filter((model): model is string => Boolean(model))
+    .filter((model, index, models) => models.indexOf(model) === index)
+}
+
+function canTryAnotherModel(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+
+  return /(?:429|RESOURCE_EXHAUSTED|quota|rate.?limit|503|UNAVAILABLE|404|NOT_FOUND)/i.test(
+    message,
+  )
+}
+
 const responseSchema = {
   type: 'object',
   additionalProperties: false,
@@ -258,25 +282,49 @@ export async function replyToWhatsAppGuest(sender: string, input: AgentInput) {
             },
           },
         ]
-  const response = await client.models.generateContent({
-    model:
-      process.env.GEMINI_WHATSAPP_MODEL ||
-      process.env.GEMINI_TEXT_MODEL ||
-      'gemini-3.5-flash',
-    contents: [
-      ...session.messages.slice(-10).map((message) => ({
-        role: message.role,
-        parts: [{ text: message.text }],
-      })),
-      { role: 'user', parts: currentUserParts },
-    ],
-    config: {
-      systemInstruction: buildWhatsAppInstructions(session),
-      responseMimeType: 'application/json',
-      responseJsonSchema: responseSchema,
-    },
-  })
-  const decision = JSON.parse(response.text || '{}') as AgentDecision
+  let responseText = ''
+  let lastModelError: unknown
+  const models = getWhatsAppModels()
+
+  for (const [index, model] of models.entries()) {
+    try {
+      const response = await client.models.generateContent({
+        model,
+        contents: [
+          ...session.messages.slice(-10).map((message) => ({
+            role: message.role,
+            parts: [{ text: message.text }],
+          })),
+          { role: 'user', parts: currentUserParts },
+        ],
+        config: {
+          systemInstruction: buildWhatsAppInstructions(session),
+          responseMimeType: 'application/json',
+          responseJsonSchema: responseSchema,
+        },
+      })
+
+      responseText = response.text || ''
+      if (!responseText) throw new Error('Gemini returned an empty response.')
+      lastModelError = undefined
+      break
+    } catch (error) {
+      lastModelError = error
+      const hasFallback = index < models.length - 1
+
+      if (!hasFallback || !canTryAnotherModel(error)) throw error
+
+      console.warn(
+        `WhatsApp AI model ${model} is unavailable; trying the next configured model.`,
+      )
+    }
+  }
+
+  if (!responseText) {
+    throw (lastModelError || new Error('No WhatsApp AI model is available.'))
+  }
+
+  const decision = JSON.parse(responseText) as AgentDecision
 
   if (decision.deleteData) {
     sessions.delete(sender)

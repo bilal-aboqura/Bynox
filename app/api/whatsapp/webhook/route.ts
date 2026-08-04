@@ -13,6 +13,7 @@ import { replyToWhatsAppGuest } from '@/lib/whatsapp-agent'
 import { getMenuProduct } from '@/lib/menu-catalog'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 
 type WhatsAppMessage = {
   from?: string
@@ -115,11 +116,33 @@ async function processMessage(message: WhatsAppMessage) {
       }
     }
   } catch (error) {
-    claimedMessages.delete(message.id)
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+
     console.error(
       'WhatsApp message processing failed:',
-      error instanceof Error ? error.message : 'Unknown error',
+      errorMessage,
     )
+
+    try {
+      const isCapacityError =
+        /(?:429|RESOURCE_EXHAUSTED|quota|rate.?limit)/i.test(errorMessage)
+      const fallback = isCapacityError
+        ? 'معلش، فيه ضغط مؤقت على المساعد دلوقتي. استني شوية صغيرة وابعتِ طلبك تاني، وأنا هكمله معاكي فورًا.'
+        : message.type === 'audio'
+          ? 'معلش، الفويس ده ما اتقراش كامل. ابعتيه تاني أقصر شوية أو اكتبيلي طلبك وأنا معاكي.'
+          : 'معلش، حصلت مشكلة بسيطة وأنا بنفذ طلبك. ابعتيه تاني وأنا هحاول فورًا.'
+
+      await sendWhatsAppText(message.from, fallback, message.id)
+    } catch (fallbackError) {
+      claimedMessages.delete(message.id)
+      console.error(
+        'WhatsApp fallback reply failed:',
+        fallbackError instanceof Error
+          ? fallbackError.message
+          : 'Unknown error',
+      )
+    }
   }
 }
 
