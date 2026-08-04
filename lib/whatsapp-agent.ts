@@ -39,6 +39,7 @@ type AgentDecision = {
     removeAll?: boolean
   }>
   showCart?: boolean
+  deleteData?: boolean
 }
 
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000
@@ -77,6 +78,7 @@ const responseSchema = {
       },
     },
     showCart: { type: 'boolean' },
+    deleteData: { type: 'boolean' },
   },
   required: [
     'reply',
@@ -84,8 +86,28 @@ const responseSchema = {
     'addItems',
     'removeItems',
     'showCart',
+    'deleteData',
   ],
 } as const
+
+function isDirectDeletionRequest(value: string) {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+
+  return (
+    normalized === 'delete my data' ||
+    normalized === 'احذف بياناتي' ||
+    normalized === 'امسح بياناتي'
+  )
+}
 
 function cleanupSessions() {
   const cutoff = Date.now() - SESSION_TTL_MS
@@ -157,6 +179,7 @@ function buildWhatsAppInstructions(session: WhatsAppSession) {
     'لو العميل طلب إضافة صنف، ضعيه في addItems بالكمية. لو الكمية مش مذكورة استخدمي 1.',
     'لو طلب حذف صنف، ضعيه في removeItems. removeAll=true لو لم يحدد كمية.',
     'لو طلب يشوف السلة أو الحساب، اجعلي showCart=true.',
+    'لو طلب حذف بياناته أو مسح بياناته، اجعلي deleteData=true ولا تنفذي أي إجراء آخر.',
     'لا تقولي إنك أضفتِ أو حذفتِ قبل وضع الإجراء الصحيح في JSON.',
     'لو الرسالة فويس، اكتبي ما فهمتيه باختصار في understoodText ثم نفذي الطلب نفسه.',
     'لو الرسالة نص، ضعي النص نفسه تقريبًا في understoodText.',
@@ -197,6 +220,11 @@ export async function replyToWhatsAppGuest(sender: string, input: AgentInput) {
     throw new Error('Missing GEMINI_API_KEY on the server.')
   }
 
+  if (input.kind === 'text' && isDirectDeletionRequest(input.text)) {
+    sessions.delete(sender)
+    return 'تم حذف سياق المحادثة والسلة المؤقتين من MinuHub.'
+  }
+
   const session = getSession(sender)
   const client = new GoogleGenAI({ apiKey })
   const currentUserParts =
@@ -232,6 +260,12 @@ export async function replyToWhatsAppGuest(sender: string, input: AgentInput) {
     },
   })
   const decision = JSON.parse(response.text || '{}') as AgentDecision
+
+  if (decision.deleteData) {
+    sessions.delete(sender)
+    return 'تم حذف سياق المحادثة والسلة المؤقتين من MinuHub.'
+  }
+
   applyDecision(session, decision)
 
   const understoodText =
@@ -250,4 +284,3 @@ export async function replyToWhatsAppGuest(sender: string, input: AgentInput) {
 
   return reply
 }
-
