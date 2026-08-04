@@ -40,6 +40,12 @@ type AgentDecision = {
   }>
   showCart?: boolean
   deleteData?: boolean
+  imageItemIds?: string[]
+}
+
+export type WhatsAppAgentReply = {
+  text: string
+  productIds: string[]
 }
 
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000
@@ -79,6 +85,11 @@ const responseSchema = {
     },
     showCart: { type: 'boolean' },
     deleteData: { type: 'boolean' },
+    imageItemIds: {
+      type: 'array',
+      maxItems: 3,
+      items: { type: 'string' },
+    },
   },
   required: [
     'reply',
@@ -87,6 +98,7 @@ const responseSchema = {
     'removeItems',
     'showCart',
     'deleteData',
+    'imageItemIds',
   ],
 } as const
 
@@ -180,6 +192,8 @@ function buildWhatsAppInstructions(session: WhatsAppSession) {
     'لو طلب حذف صنف، ضعيه في removeItems. removeAll=true لو لم يحدد كمية.',
     'لو طلب يشوف السلة أو الحساب، اجعلي showCart=true.',
     'لو طلب حذف بياناته أو مسح بياناته، اجعلي deleteData=true ولا تنفذي أي إجراء آخر.',
+    'لو العميل طلب يشوف منتج أو صورته أو تفاصيله، ضعي id المنتج في imageItemIds.',
+    'لو رشحتي منتجًا محددًا، ضعي id المنتج في imageItemIds حتى يرى صورته. أرسلي بحد أقصى 3 صور ولا تضعي صورًا لا علاقة لها بالرد.',
     'لا تقولي إنك أضفتِ أو حذفتِ قبل وضع الإجراء الصحيح في JSON.',
     'لو الرسالة فويس، اكتبي ما فهمتيه باختصار في understoodText ثم نفذي الطلب نفسه.',
     'لو الرسالة نص، ضعي النص نفسه تقريبًا في understoodText.',
@@ -222,7 +236,10 @@ export async function replyToWhatsAppGuest(sender: string, input: AgentInput) {
 
   if (input.kind === 'text' && isDirectDeletionRequest(input.text)) {
     sessions.delete(sender)
-    return 'تم حذف سياق المحادثة والسلة المؤقتين من MinuHub.'
+    return {
+      text: 'تم حذف سياق المحادثة والسلة المؤقتين من MinuHub.',
+      productIds: [],
+    } satisfies WhatsAppAgentReply
   }
 
   const session = getSession(sender)
@@ -263,7 +280,10 @@ export async function replyToWhatsAppGuest(sender: string, input: AgentInput) {
 
   if (decision.deleteData) {
     sessions.delete(sender)
-    return 'تم حذف سياق المحادثة والسلة المؤقتين من MinuHub.'
+    return {
+      text: 'تم حذف سياق المحادثة والسلة المؤقتين من MinuHub.',
+      productIds: [],
+    } satisfies WhatsAppAgentReply
   }
 
   applyDecision(session, decision)
@@ -282,5 +302,14 @@ export async function replyToWhatsAppGuest(sender: string, input: AgentInput) {
   session.messages = session.messages.slice(-12)
   session.updatedAt = Date.now()
 
-  return reply
+  const productIds = [
+    ...(decision.imageItemIds || []),
+    ...(decision.addItems || []).map((item) => item.id || ''),
+  ]
+    .filter((id, index, values) => {
+      return Boolean(getMenuProduct(id)) && values.indexOf(id) === index
+    })
+    .slice(0, 3)
+
+  return { text: reply, productIds } satisfies WhatsAppAgentReply
 }

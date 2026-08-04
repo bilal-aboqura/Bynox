@@ -2,12 +2,15 @@ import { after } from 'next/server'
 import { NextResponse } from 'next/server'
 import {
   downloadWhatsAppAudio,
+  getPublicWhatsAppAssetUrl,
   markWhatsAppMessageRead,
   normalizeWhatsAppNumber,
   sendWhatsAppText,
+  sendWhatsAppImage,
   verifyMetaWebhookSignature,
 } from '@/lib/whatsapp-cloud'
 import { replyToWhatsAppGuest } from '@/lib/whatsapp-agent'
+import { getMenuProduct } from '@/lib/menu-catalog'
 
 export const runtime = 'nodejs'
 
@@ -66,7 +69,7 @@ async function processMessage(message: WhatsAppMessage) {
 
     markWhatsAppMessageRead(message.id).catch(() => undefined)
 
-    let reply: string
+    let reply: { text: string; productIds: string[] }
 
     if (message.type === 'text' && message.text?.body?.trim()) {
       reply = await replyToWhatsAppGuest(message.from, {
@@ -80,10 +83,37 @@ async function processMessage(message: WhatsAppMessage) {
         audio,
       })
     } else {
-      reply = 'حالياً أقدر أفهم رسالة مكتوبة أو فويس. ابعتيلي طلبك بأي واحدة فيهم.'
+      reply = {
+        text: 'حالياً أقدر أفهم رسالة مكتوبة أو فويس. ابعتيلي طلبك بأي واحدة فيهم.',
+        productIds: [],
+      }
     }
 
-    await sendWhatsAppText(message.from, reply, message.id)
+    await sendWhatsAppText(message.from, reply.text, message.id)
+
+    const imageResults = await Promise.allSettled(
+      reply.productIds.map(async (productId) => {
+        const product = getMenuProduct(productId)
+        if (!product) return
+
+        await sendWhatsAppImage(
+          message.from as string,
+          getPublicWhatsAppAssetUrl(
+            `/api/whatsapp/product-image/${encodeURIComponent(product.id)}`,
+          ),
+          `${product.nameAr}\n${product.descriptionAr}\n${product.price} جنيه`,
+        )
+      }),
+    )
+
+    for (const result of imageResults) {
+      if (result.status === 'rejected') {
+        console.error(
+          'WhatsApp product image failed:',
+          result.reason instanceof Error ? result.reason.message : 'Unknown error',
+        )
+      }
+    }
   } catch (error) {
     claimedMessages.delete(message.id)
     console.error(
@@ -146,4 +176,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true })
 }
-

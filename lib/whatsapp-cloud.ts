@@ -101,6 +101,49 @@ export async function sendWhatsAppText(
   }
 }
 
+export function getPublicWhatsAppAssetUrl(pathname: string) {
+  const configured = process.env.WHATSAPP_PUBLIC_BASE_URL?.trim()
+  const vercelHost =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
+    process.env.VERCEL_URL?.trim()
+  const base = configured || (vercelHost ? `https://${vercelHost}` : '')
+
+  if (!base) {
+    throw new Error('Missing WHATSAPP_PUBLIC_BASE_URL on the server.')
+  }
+
+  return new URL(pathname, `${base.replace(/\/$/, '')}/`).toString()
+}
+
+export async function sendWhatsAppImage(
+  recipient: string,
+  imageUrl: string,
+  caption: string,
+) {
+  const phoneNumberId = requiredEnvironmentValue('WHATSAPP_PHONE_NUMBER_ID')
+  const response = await fetch(graphApiUrl(`${phoneNumberId}/messages`), {
+    method: 'POST',
+    headers: {
+      ...authorizationHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: normalizeWhatsAppNumber(recipient),
+      type: 'image',
+      image: {
+        link: imageUrl,
+        caption: caption.trim().slice(0, 1_000),
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseMetaError(response))
+  }
+}
+
 export async function markWhatsAppMessageRead(messageId: string) {
   const phoneNumberId = requiredEnvironmentValue('WHATSAPP_PHONE_NUMBER_ID')
   const response = await fetch(graphApiUrl(`${phoneNumberId}/messages`), {
@@ -163,4 +206,3 @@ export async function downloadWhatsAppAudio(mediaId: string) {
     mimeType: metadata.mime_type,
   }
 }
-
