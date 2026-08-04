@@ -45,6 +45,45 @@ type AgentPointer = {
   pressed: boolean
 }
 
+type MenuOffer = {
+  id: string
+  image: string
+  imagePosition: string
+  altAr: string
+  altEn: string
+}
+
+const menuOffers: MenuOffer[] = [
+  {
+    id: 'ready-berry',
+    image: '/images/offers/ready-berry.jpg',
+    imagePosition: '50% 50%',
+    altAr: 'عرض مشروبات وحلويات الفراولة',
+    altEn: 'Strawberry drinks and desserts offer',
+  },
+  {
+    id: 'sweet-sensations',
+    image: '/images/offers/sweet-sensations.jpg',
+    imagePosition: '50% 50%',
+    altAr: 'عرض قهوة وحلويات اللوز',
+    altEn: 'Almond coffee and dessert offer',
+  },
+  {
+    id: 'bottle-pack',
+    image: '/images/offers/bottle-pack.jpg',
+    imagePosition: '50% 50%',
+    altAr: 'عرض مجموعة زجاجات القهوة',
+    altEn: 'Coffee bottle pack offer',
+  },
+  {
+    id: 'cold-brew-specials',
+    image: '/images/offers/cold-brew-specials.jpg',
+    imagePosition: '50% 50%',
+    altAr: 'عرض مشروبات الكولد برو',
+    altEn: 'Cold brew drinks offer',
+  },
+]
+
 const copy = {
   ar: {
     subtitle: 'المنيو الذكي',
@@ -146,17 +185,53 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
     'opening' | 'removing' | null
   >(null)
   const [cartArriving, setCartArriving] = useState(false)
+  const [activeOfferIndex, setActiveOfferIndex] = useState(0)
   const agentTimersRef = useRef<number[]>([])
   const queuedAgentDelayRef = useRef(0)
   const selectedProductIdRef = useRef<string | null>(null)
   const cartRef = useRef<Cart>({})
   const cartOpenRef = useRef(false)
+  const offerTouchStartXRef = useRef<number | null>(null)
 
   useEffect(() => {
     return () => {
       agentTimersRef.current.forEach((timer) => window.clearTimeout(timer))
     }
   }, [])
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setActiveOfferIndex((current) => (current + 1) % menuOffers.length)
+    }, 5600)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const moveOffer = (direction: -1 | 1) => {
+    setActiveOfferIndex(
+      (current) => (current + direction + menuOffers.length) % menuOffers.length,
+    )
+  }
+
+  const handleOfferTouchStart = (event: React.TouchEvent<HTMLElement>) => {
+    offerTouchStartXRef.current = event.touches[0]?.clientX ?? null
+  }
+
+  const handleOfferTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
+    const startX = offerTouchStartXRef.current
+    const endX = event.changedTouches[0]?.clientX
+    offerTouchStartXRef.current = null
+
+    if (startX === null || endX === undefined || Math.abs(endX - startX) < 42) {
+      return
+    }
+
+    moveOffer(endX < startX ? 1 : -1)
+  }
 
   const filteredProducts = useMemo(() => {
     const normalized = search.trim().toLocaleLowerCase(locale)
@@ -640,6 +715,40 @@ export function SmartMenuPage({ locale }: SmartMenuPageProps) {
           </button>
         </div>
       </header>
+
+      <div className="menu-safe-inline mx-auto max-w-7xl pt-4 sm:pt-6">
+        <section
+          aria-label={isArabic ? 'عروض MinuHub' : 'MinuHub offers'}
+          aria-roledescription="carousel"
+          onTouchStart={handleOfferTouchStart}
+          onTouchEnd={handleOfferTouchEnd}
+          className="relative isolate aspect-[2/1] w-full touch-pan-y overflow-hidden rounded-[14px] bg-[#F4F0EC]"
+        >
+          {menuOffers.map((offer, index) => {
+            const isActive = index === activeOfferIndex
+
+            return (
+              <article
+                key={offer.id}
+                aria-hidden={!isActive}
+                className={`absolute inset-0 transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+                  isActive ? 'z-10 opacity-100' : 'pointer-events-none opacity-0'
+                }`}
+              >
+                <Image
+                  src={offer.image}
+                  alt={isArabic ? offer.altAr : offer.altEn}
+                  fill
+                  sizes="(max-width: 1279px) calc(100vw - 2rem), 1248px"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  style={{ objectPosition: offer.imagePosition }}
+                  className="object-cover"
+                />
+              </article>
+            )
+          })}
+        </section>
+      </div>
 
       <main className="menu-safe-inline mx-auto max-w-7xl pb-56 pt-4 sm:pt-6">
         <div className="sticky top-[69px] z-30 bg-[#FCFCFB] pb-3 pt-1">
